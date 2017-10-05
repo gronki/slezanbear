@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 #-------------------------------------------------------------------------------
 
-dist_max = 20.0
-x0 = linspace(-dist_max * 1.5, dist_max * 1.5, 401)
-h0 = linspace(0.01, 30, 500)
+dist_max = 80.0
+x0 = linspace(-dist_max, dist_max, 401)
+h0 = linspace(0.01, min(dist_max / 1.5, 40), 500)
 x,H = meshgrid(x0, h0, indexing = 'xy')
-A0 = (x0[1] - x0[0])**2
+A0 = 1.0 #(x0[1] - x0[0])**2
 
 #-------------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ def kern(sig0, chi0, I0, A0, R, D, H, Hobs):
     tau = chi0 * L * FF(-H / Hscale) \
         + chi0 * Hscale * exp(-H / Hscale)  * (exp((H-Hobs) / Hscale) - 1)
     return 0.5 * I0 * exp(-tau) * sig0 * exp(-H/Hscale) \
-        * g(costh) * E(cosgam) * cutoff(cosgam, 2) \
+        * g(costh) * E(cosgam) * cutoff(cosgam, 0.1) \
         * A0 / (2 * pi * L**2 + A0)
 
 def tau(chi0, R, D, H, Hobs):
@@ -55,6 +55,12 @@ def tau(chi0, R, D, H, Hobs):
     tau1 = chi0 * L * FF(-H / Hscale)
     tau2 = chi0 * Hscale * (exp(-Hobs / Hscale) - exp(-H / Hscale))
     return tau1, tau2
+
+#-------------------------------------------------------------------------------
+
+def berry(s,b,k,H,D):
+    L = sqrt(H**2 + D**2)
+    return s * (H + b*L) / L**2 * exp(-k*L)
 
 #-------------------------------------------------------------------------------
 
@@ -72,8 +78,8 @@ fig, axes = plt.subplots(2, 1)
 ax = axes[0]
 cn = arange(-24,-1)
 ax.pcolor(  x0, h0[::2], log10(I[::2,:]),
-            vmin = -8,
-            vmax = -2,
+            vmin = log10(sig*Hscale) - 6,
+            vmax = log10(sig*Hscale),
             cmap = 'jet')
 cs = ax.contour( x0, h0, tau1,
     levels = logspace(-2,1,13),
@@ -82,8 +88,10 @@ ax.clabel(cs, fontsize = 6)
 ax.set_aspect(1)
 
 ax = axes[1]
-ax.plot(x0, sum(Ifl,0), color = '#9ECBC4')
-# ax.plot(x0, sum(Ifl,0), color = '#03A890')
+ax.plot(x0, sum(Ifl,0), color = '#03A890')
+ax.plot(x0, sum(Ifl_noa,0), color = '#9ECBC4')
+
+ax.plot(x0, berry(sig, 0.1, chi, Hscale, abs(x0)), color = '#FF6E11')
 
 ax.plot(x0, sum(I,0), linestyle = '--', color = '#141414')
 ax.axhline(sig*Hscale/2.7, color = '#BEBEBE', linewidth = 0.6)
