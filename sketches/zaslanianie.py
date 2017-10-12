@@ -55,7 +55,7 @@ from threshold import th
 for j in range(H.shape[1]):
     for i in range(H.shape[0]):
         lray = linspace(0, L[i,j], max(L[i,j] / dx,10.0))
-        hray = lray * (H[i,j] / L[i,j] - (L[i,j] - lray) / (2 * R**2))
+        hray = lray * (H[i,j] / L[i,j] - (L[i,j] - lray) / (2 * R))
         dray = sqrt(lray**2 - hray**2) / sqrt(1 + hray / R)
         hter = interp(sign(x[j]) * dray, x, Hterr - Hsrc)
         I[i,j] *= (2 + th(Habs[i,j] - Hterr[j], 0.03)) / 3
