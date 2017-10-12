@@ -110,7 +110,7 @@ contains
         par1 % alpha = (par % alpha) * exp(-(hsrc(i,j)) / (par % hscale))
 
         call kern(par1, asrc(i,j), radearth + hsrc(i,j), &
-            & radearth * angdist(lat, lng, latsrc(i,j), lngsrc(i,j)), &
+            & radearth * angdist(lat(k), lng(k), latsrc(i,j), lngsrc(i,j)), &
             & hsct - hsrc(i,j), hobs - hsrc(i,j), J0, J1)
 
         if (terrain_attenuation) then
@@ -150,7 +150,7 @@ contains
     type(geotransform) :: gti, gth
     call gti % import(gi)
     call gth % import(gh)
-    call onepoint(par, lat, lng, mapi, gti, maph, gth, Iobs, tau)
+    call sbmlist(par, lat, lng, mapi, gti, maph, gth, Iobs, tau)
   end subroutine
 
 end module
