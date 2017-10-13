@@ -4,18 +4,17 @@ module kernel
   implicit none
 
   type modelpar
-    real :: skybg = 0
-    real :: alpha = 0.4
-    real :: relabs = 0.75
-    real :: hscale = 5000.0
+    real(fp) :: skybg = 0
+    real(fp) :: alpha = 0.4
+    real(fp) :: relabs = 0.75
+    real(fp) :: hscale = 8000.0
   end type
 
 contains
 
-  elemental function th(x,w)
-    real, intent(in) :: x
-    real, intent(in), optional :: w
-    real :: th
+  elemental real(fp) function th(x,w)
+    real(fp), intent(in) :: x
+    real(fp), intent(in), optional :: w
     if (present(w)) then
       th = 1 / ( 1 + exp(-4*x/w) )
     else
@@ -25,11 +24,11 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  elemental subroutine kern(par, A0, R, D, H, Hobs, J0, J1)
+  elemental subroutine kern(par, A0, R, D, H, Hobs, J1, J2, J3)
     type(modelpar), intent(in) :: par
-    real, intent(in) :: A0, R, D, H, Hobs
-    real, intent(out) :: J0, J1
-    real :: L, Q, costh, cosg, tau1, tau2, sct, chi
+    real(fp), intent(in) :: A0, R, D, H, Hobs
+    real(fp), intent(out) :: J1, J2, J3
+    real(fp) :: L, Q, costh, cosg, tau1, tau2, sct, chi
 
     ! distance from the source to the scattering point
     L = sqrt(H**2 + (1 + H / R) * D**2)
@@ -46,14 +45,14 @@ contains
     tau2 = chi * (par % Hscale) * exp(-Hobs / (par % Hscale)) &
          &     * (1 - exp(-(H - Hobs) / (par % Hscale)))
 
-    J0 = E(cosg) * A0 / (2 * pi * L**2 + A0) * exp(-tau1) / 2
-    J1 = sct * exp(-H / (par % Hscale)) * g(costh) * exp(-tau2)
+    J1 = sct * exp(-H / (par % Hscale)) * (A0 / 2) / (2 * pi * L**2 + A0)
+    J2 = E(cosg) * g(costh)
+    J3 = exp(-tau1) * exp(-tau2)
 
   contains
 
-    elemental function ff(x) result(y)
-      real, intent(in) :: x
-      real :: y
+    elemental real(fp) function ff(x) result(y)
+      real(fp), intent(in) :: x
       if ( abs(x) > 1e-2 ) then
         y = (exp(x) - 1) / x
       else
@@ -61,45 +60,38 @@ contains
       end if
     end function
 
-    elemental function g(costh)
-      real, intent(in) :: costh
-      real :: g
+    elemental real(fp) function g(costh)
+      real(fp), intent(in) :: costh
       g = 1
     end function
 
-    elemental function E0(cosg) result(E)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E0(cosg) result(E)
+      real(fp), intent(in) :: cosg
       E = merge(1, 0, cosg > 0)
     end function
 
-    elemental function E1(cosg) result(E)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E1(cosg) result(E)
+      real(fp), intent(in) :: cosg
       E = 1.5 * cosg * merge(1, 0, cosg > 0)
     end function
 
-    elemental function E2(cosg) result(E)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E2(cosg) result(E)
+      real(fp), intent(in) :: cosg
       E = 6 * cosg * (1 - cosg) * merge(1, 0, cosg > 0)
     end function
 
-    elemental function E3(cosg) result(E)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E3(cosg) result(E)
+      real(fp), intent(in) :: cosg
       E = 15  * cosg * (1 - cosg)**2 * merge(1, 0, cosg > 0)
     end function
 
-    elemental function E4(cosg) result(E)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E4(cosg) result(E)
+      real(fp), intent(in) :: cosg
       E = 30  * cosg * (1 - cosg)**3 * merge(1, 0, cosg > 0)
     end function
 
-    elemental function E(cosg)
-      real, intent(in) :: cosg
-      real :: E
+    elemental real(fp) function E(cosg)
+      real(fp), intent(in) :: cosg
       E = E0(cosg)
     end function
 

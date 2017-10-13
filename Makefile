@@ -1,6 +1,6 @@
 PREFIX = /usr/local
 FC = gfortran
-FFLAGS ?= -g -O2 -Wall -mieee-fp
+FFLAGS = -g -O2 -Wall -mieee-fp -fopenmp -Warray-temporaries -Wrealloc-lhs-all
 OBJECTS = geo.o kernel.o globals.o model.o
 VPATH = src
 
@@ -12,7 +12,7 @@ include deps.inc
 	$(FC) $(FFLAGS) -fpic -c $< -o $@
 
 libslezanbear.so: $(OBJECTS)
-	$(FC) -shared $^ -o $@
+	$(FC) $(FFLAGS) -shared $^ $(LDLIBS) -o $@
 
 clean:
 	$(RM) *.o *.mod *.so
