@@ -4,7 +4,7 @@ from gdal import Open as OpenGdal
 
 #-------------------------------------------------------------------------------
 
-fn0 = 'SVDNB_npp_20150101-20151231_75N060W_{}_v10_c201701311200.avg_rade9.tif'
+fn0 = '../data/SVDNB_npp_20150101-20151231_75N060W_{}_v10_c201701311200.avg_rade9.tif'
 
 # vcm - viirs cloud mask
 # vcm-orm = outlier removed
@@ -56,7 +56,7 @@ axes[0].imshow(np.sqrt(map_i),
 
 #-------------------------------------------------------------------------------
 
-gd1 = OpenGdal('eudem_dem_5deg_n50e015.tif')
+gd1 = OpenGdal('../data/eudem_dem_5deg_n50e015.tif')
 gt1 = gd1.GetGeoTransform()
 
 x0,y0 = geo2xy(gt1, f0, l0)
