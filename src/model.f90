@@ -32,7 +32,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  pure subroutine checkline(maph, gth, lat1, lng1, h1, lat2, lng2, h2, attn)
+  pure subroutine checkray(maph, gth, lat1, lng1, h1, lat2, lng2, h2, attn)
     ! altitude map and geotransform
     real, dimension(:,:), intent(in) :: maph
     type(geotransform), intent(in) :: gth
@@ -72,7 +72,7 @@ contains
     Q(1:nn) = (h_ray(1:nn) * radearth - hterr(1:nn)) &
           & / (raylength * t(1:nn))
     attn = th(minval(Q(1:nn)) / real(0.001,fp))
-  end subroutine checkline
+  end subroutine checkray
 
   !-----------------------------------------------------------------------------
 
@@ -145,7 +145,7 @@ contains
           & JJ(:,1), JJ(:,2), JJ(:,3))
 
       check_lines_all_heights: do k = 1,nh
-        call checkline(maph, gth,                               &
+        call checkray(maph, gth,                                &
               & src(i,j) % lat, src(i,j) % lng, src(i,j) % h,   &
               & lat,            lng,            hsct(k),        &
               & JJ(k,4))
