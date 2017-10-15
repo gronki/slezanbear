@@ -71,8 +71,7 @@ contains
 
     Q(1:nn) = (h_ray(1:nn) * radearth - hterr(1:nn)) &
           & / (raylength * t(1:nn))
-    attn = th(minval(Q(1:nn)) / real(0.001,fp) + 0.5)
-    ! attn = merge(1, 0, minval(Q(1:nn)) >= 0)
+    attn = th(minval(Q(1:nn)) / real(0.001,fp))
   end subroutine checkline
 
   !-----------------------------------------------------------------------------

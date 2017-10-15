@@ -14,7 +14,7 @@ dist = lambda f1,l1,f2,l2: arccos( \
 latlim  = 50.75, 51.05
 lnglim  = 16.55, 16.85
 
-nord = 7
+nord = 5
 
 mkgt = lambda lat,lng: array([lng[0], lng[1] - lng[0], 0,
             lat[0], 0, lat[1] - lat[0]],
@@ -42,7 +42,6 @@ r2 = radearth * dist(50.875, 16.703, lat, lng)
 mountain = lambda f,l,h,w: h * exp(- 0.5 * radearth**2 * dist(f,l,lat,lng)**2 / w**2)
 hterr = array(200 + 300 * th(3000 - r1, 1200) + 400 * th(1800 - r2, 800) \
         - 300 * (lat - 50.90) - 30 * (lng - 16.70) \
-        + mountain(50.925, 16.672, 400, 2700) \
         + mountain(50.951, 16.700, 500, 500) \
         + mountain(50.951, 16.710, 500, 200) \
         + mountain(50.955, 16.720, 400, 400) \
@@ -55,7 +54,7 @@ hterr = array(200 + 300 * th(3000 - r1, 1200) + 400 * th(1800 - r2, 800) \
 
 n = 2**(nord + 1)
 lat, lng, gti = latlng(latlim, lnglim, n, n)
-r = radearth * dist(50.917, 16.701, lat, lng)
+r = radearth * dist(50.917, 16.720, lat, lng)
 I0 = array(where(r < 1e3 , 99, 0),
     copy = True, dtype = float32, order = 'F')
 
