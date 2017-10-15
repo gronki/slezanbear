@@ -1,16 +1,19 @@
 module geo
 
   use globals
+  use iso_fortran_env, only: r32 => real32, r64 => real64
   implicit none
 
   type geotransform
-    !       g(1)  g(2)  g(3)
-    real :: x0,   xi,    xj
-    !       g(4)  g(5)  g(6)
-    real :: y0,   yi,    yj
+    !            g(1)  g(2)  g(3)
+    real(r64) :: x0,   xi,    xj
+    !            g(4)  g(5)  g(6)
+    real(r64) :: y0,   yi,    yj
   contains
     procedure :: det => geotransform_det
-    procedure :: import => geotransform_import
+    procedure, private :: geotransform_import_32
+    procedure, private :: geotransform_import_64
+    generic :: import => geotransform_import_32, geotransform_import_64
   end type
 
 contains
@@ -20,9 +23,20 @@ contains
     det = (gt % xi) * (gt % yj) - (gt % xj) * (gt % yi)
   end function
 
-  pure subroutine geotransform_import(gt,g)
+  pure subroutine geotransform_import_32(gt,g)
     class(geotransform), intent(inout) :: gt
-    real, dimension(6), intent(in) :: g
+    real(r32), dimension(6), intent(in) :: g
+    gt % x0 = g(1)
+    gt % xi = g(2)
+    gt % xj = g(3)
+    gt % y0 = g(4)
+    gt % yi = g(5)
+    gt % yj = g(6)
+  end subroutine
+
+  pure subroutine geotransform_import_64(gt,g)
+    class(geotransform), intent(inout) :: gt
+    real(r64), dimension(6), intent(in) :: g
     gt % x0 = g(1)
     gt % xi = g(2)
     gt % xj = g(3)
