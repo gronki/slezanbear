@@ -9,7 +9,7 @@ program gdal_read_test
 
   type(GDALDriverH) :: driver
   type(GDALDatasetH) :: gd
-  TYPE(GDALRasterBandH) :: band
+  type(GDALRasterBandH) :: band
 
   integer :: nx, ny, nz, errno, i
   real(8) :: g(6)
@@ -41,7 +41,7 @@ program gdal_read_test
   do i = 1,3
     band = GDALGetRasterBand(gd,i)
     errno = GDALRasterIO_f(band, GF_READ, 0, 0, dat(:,:,i))
-    print '("errno = ",I0)', errno
+    print '("band ",I0," errno = ",I0)', i,errno
   end do
 
   call checkdata(gt, dat, 1,   1)

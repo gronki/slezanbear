@@ -9,10 +9,11 @@ program gdal_write_test
 
   type(GDALDriverH) :: driver
   type(GDALDatasetH) :: gd
+  type(GDALRasterBandH) :: band
   integer, parameter :: nx = 120, ny = 80, nz = 3
   real(8), dimension(nx,ny,nz) :: dat
   real(8) :: g(6)
-  integer :: errno
+  integer :: errno, i
 
   g = [16.9, (17.1 - 16.9) / (nx - 1), 0.0, &
   &    50.9, 0.0, (51.1 - 50.9) / (ny - 1)]
@@ -52,8 +53,11 @@ program gdal_write_test
   end block gen_image
 
 
-  errno = GDALDatasetRasterIO_f(gd, GF_WRITE, 0, 0, dat)
-  print '("errno = ",I0)', errno
+  do i = 1,3
+    band = GDALGetRasterBand(gd, i)
+    errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, dat(:,:,i))
+    print '("band ",I0," errno = ",I0)', i,errno
+  end do
   ! errno = GDALSetProjection(gd, "WGS 84" // char(0))
   ! print '("errno = ",I0)', errno
   errno = GDALSetGeoTransform(gd, g)
