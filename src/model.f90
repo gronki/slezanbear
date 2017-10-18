@@ -15,7 +15,6 @@ module slezanbear
     real(fp) :: lat, lng
     real(fp) :: h, area
     real(fp) :: em
-    logical :: mask = .false.
   end type source
 
   logical :: terrain_attenuation = .true.
@@ -92,7 +91,6 @@ contains
       call interpolmap(maph, gth, src(i,j) % lat, src(i,j) % lng, src(i,j) % h)
 
       src(i,j) % em = mapi(i,j)
-      src(i,j) % mask = (mapi(i,j) .ne. 0)
     end do
   end subroutine
 
@@ -133,7 +131,10 @@ contains
     end forall
 
     ! iterate through all map points
-    do concurrent (i = 1:size(src,1), j = 1:size(src,2), src(i,j) % mask)
+    do concurrent (i = 1:size(src,1), j = 1:size(src,2), &
+          & (src(i,j) % em .ne. 0) &
+          & .and. (angdist(lat, lng, src(i,j) % lat, src(i,j) % lng) &
+          &     .le. (dmax / radearth)))
 
       par1 % alpha = (par % alpha) * exp(-(src(i,j) % h) / (par % hscale))
 
@@ -185,23 +186,23 @@ contains
     ! output
     real(fp), intent(out), dimension(:,:) :: I1, I2
     ! source map for computation
-    type(source), dimension(size(mapi,1),size(mapi,2)) :: src
+    type(source), dimension(:,:), allocatable :: src
     integer :: i,j
 
+    allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
 
     !$omp parallel do private(j,lat,lng)
     do i = 1,size(I1,1)
       do j = 1,size(I1,2)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
-        src(:,:) % mask = (src % em .ne. 0) &
-            & .and. (angdist(lat, lng, src % lat, src % lng) &
-            & .le. (dmax / radearth))
+        write (*,'(I4,1X,I4)')  i, j
         call onepoint(par, lat, lng, src, maph, gth, I1(i,j), I2(i,j))
-        write (*,'(I0," x ",I0)') i, j
       end do
     end do
     !$omp end parallel do
+
+    deallocate( src )
 
   end subroutine
 

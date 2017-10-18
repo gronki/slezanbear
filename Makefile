@@ -1,15 +1,15 @@
 PREFIX = /usr/local
 FC = gfortran
-FFLAGS = -g -O2
+FFLAGS ?= -O2 -g
 LDLIBS = -lgdal
 
 ifeq ($(FC),gfortran)
-FFLAGS += -mieee-fp
+FFLAGS := -g -O3 -march=native -mieee-fp
 FFLAGS += -Wall -Warray-temporaries -Wrealloc-lhs-all
 FFLAGS += -fopenmp
 endif
 ifeq ($(FC),ifort)
-FFLAGS += -fp-model precise
+FFLAGS := -g -O2 -xHost -fp-model precise
 FFLAGS += -warn all -Winline
 FFLAGS += -qopenmp
 endif
