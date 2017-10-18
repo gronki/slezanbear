@@ -17,8 +17,6 @@ module slezanbear
     real(fp) :: em
   end type source
 
-  logical :: terrain_attenuation = .true.
-
 contains
 
   !-----------------------------------------------------------------------------
@@ -148,20 +146,26 @@ contains
           & hsct - src(i,j) % h, hobs - src(i,j) % h, &
           & JJ(:,1), JJ(:,2), JJ(:,3))
 
-      check_lines_all_heights: do k = 1,height_sect_num
-        call checkray(maph, gth,                                &
-              & src(i,j) % lat, src(i,j) % lng, src(i,j) % h,   &
-              & lat,            lng,            hsct(k),        &
-              & JJ(k,4))
-      end do check_lines_all_heights
+      if (terrain_attenuation) then
+        check_lines_all_heights: do k = 1,height_sect_num
+          call checkray(maph, gth,                          &
+          & src(i,j) % lat, src(i,j) % lng, src(i,j) % h,   &
+          & lat,            lng,            hsct(k),        &
+          & JJ(k,4))
+        end do check_lines_all_heights
+      end if
 
       JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3)
-      I1 = I1 + INTEGRATE(JJP,hsct) * (src(i,j) % em) * 1e-9
+      I1 = I1 + (src(i,j) % em) * 1e-9 * integrate(JJP, hsct)
 
-      JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3) * JJ(:,4)
-      I2 = I2 + INTEGRATE(JJP,hsct) * (src(i,j) % em) * 1e-9
+      if ( terrain_attenuation ) then
+        JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3) * JJ(:,4)
+        I2 = I2 + (src(i,j) % em) * 1e-9 * integrate(JJP, hsct)
+      end if
 
     end do
+
+    if (.not. terrain_attenuation) I2 = I1
 
   contains
 

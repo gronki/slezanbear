@@ -88,6 +88,7 @@ program sbmap_p
     type(geotransform) :: gtm
     real(fp), dimension(:,:), allocatable :: I1, I2, hobs
     integer nox,noy
+    real(fp) :: t0,t1
 
     nox = nint(abs(ulng - llng) / m2d(model_grid_meters) * cos(llat/2 + ulat/2))
     noy = nint(abs(ulat - llat) / m2d(model_grid_meters))
@@ -97,12 +98,18 @@ program sbmap_p
 
     gtm % x0 = llng
     gtm % xi = (ulng - llng) / (nox - 1)
+    gtm % xj = 0
     gtm % y0 = ulat
+    gtm % yi = 0
     gtm % yj = (llat - ulat) / (noy - 1)
 
+    call cpu_time(t0)
     call sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gtm)
+    call cpu_time(t1)
 
-    gd = GDALCreate(driver, 'model2.tif' // char(0), &
+    write (*, '("CPUTIME = ",F0.2)') t1 - t0
+
+    gd = GDALCreate(driver, trim(outfn) // char(0), &
     &               nox, noy, 3, GDT_FLOAT64, c_null_ptr)
 
     band = GDALGetRasterBand(gd,1)
