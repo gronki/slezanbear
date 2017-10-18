@@ -42,14 +42,13 @@ contains
     real(fp), intent(out) :: attn
     ! internal variables
     integer, parameter :: nnmax = 2**10
-    integer :: nn,i
+    integer :: nn
     real(fp) :: raylength
-    real(fp), dimension(nnmax) :: t, lat_ray, lng_ray, h_ray, hterr, Q
 
     raylength = raydist(lat1, lng1, h1 / radearth, &
-      & lat2, lng2, h2 / radearth) * radearth
+                      & lat2, lng2, h2 / radearth) * radearth
 
-    if ( abs(h1 - h2) / raylength > 0.707 ) then
+    if ( abs(h1 - h2) / raylength > sin(30 * pi / 180) ) then
       attn = 1
       return
     end if
@@ -58,18 +57,25 @@ contains
     if (nn > nnmax) nn = nnmax
     if (nn < 3) nn = 3
 
-    forall (i = 1:nn) t(i) = real(i,fp) / nn
+    trace_ray: block
 
-    call georay(lat1, lng1, h1 / radearth, lat2, lng2, h2 / radearth, &
-      & t(1:nn), lat_ray(1:nn), lng_ray(1:nn), h_ray(1:nn))
+      real(fp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr, Q
+      integer :: i
 
-    do concurrent (i = 1:nn)
-      call interpolmap(maph, gth, lat_ray(i), lng_ray(i), hterr(i))
-    end do
+      forall (i = 1:nn) t(i) = real(i,fp) / nn
 
-    Q(1:nn) = (h_ray(1:nn) * radearth - hterr(1:nn)) &
-          & / (raylength * t(1:nn))
-    attn = th(minval(Q(1:nn)) / real(0.001,fp))
+      call georay(lat1, lng1, h1 / radearth, lat2, lng2, h2 / radearth, &
+        & t, lat_ray, lng_ray, h_ray)
+
+      do concurrent (i = 1:nn)
+        call interpolmap(maph, gth, lat_ray(i), lng_ray(i), hterr(i))
+      end do
+
+      Q(:) = (h_ray * radearth - hterr) / (raylength * t)
+      attn = th(minval(Q) / real(0.001,fp))
+
+    end block trace_ray
+
   end subroutine checkray
 
   !-----------------------------------------------------------------------------
