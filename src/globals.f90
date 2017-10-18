@@ -11,7 +11,16 @@ module globals
 
   real(fp) :: llat = 50.78, llng = 16.52
   real(fp) :: ulat = 51.50, ulng = 17.49
-  real(fp) :: dmax = 150e3
-  
+  real(fp) :: dmax = 100e3
+
+  real(fp)           :: model_grid_meters   = 1000
+  real(fp)           :: elev_grid_meters    = 125
+
+  integer, parameter :: height_sect_num     = 60
+
+  real(fp)           :: chkray_sect_meters  = 125
+  real(fp)           :: chkray_maxangle     = 30
+  integer, parameter :: chkray_sect_num     = 2**10
+
 
 end module

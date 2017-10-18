@@ -1,17 +1,15 @@
 PREFIX = /usr/local
 FC = gfortran
-FFLAGS ?= -O2 -g
+FFLAGS = -g -O3 -march=native -fopenmp
 LDLIBS = -lgdal
 
 ifeq ($(FC),gfortran)
-FFLAGS := -g -O3 -march=native -mieee-fp
+FFLAGS += -funsafe-math-optimizations
 FFLAGS += -Wall -Warray-temporaries -Wrealloc-lhs-all
-FFLAGS += -fopenmp
 endif
 ifeq ($(FC),ifort)
-FFLAGS := -g -O2 -xHost -fp-model precise
+# FFLAGS += -ipo
 FFLAGS += -warn all -Winline
-FFLAGS += -qopenmp
 endif
 
 VPATH = src:src/gdal:src/test
@@ -35,10 +33,10 @@ testbin/testr: gdal_test_common.o gdal_read_test.o $(OBJECTS)
 
 bin/%: %.o $(OBJECTS)
 	mkdir -p bin
-	$(FC) $(FFLAGS) $^ $(LDLIBS) -o $@
+	$(FC) $(FFLAGS) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 libslezanbear.so: globals.f90 geo.f90 kernel.f90 model.f90
-	$(FC) $(FFLAGS) -shared -fPIC $^ -o $@
+	$(FC) $(FFLAGS) $(LDFLAGS) -shared -fPIC $^ -o $@
 
 clean:
 	$(RM) *.o *.mod *.so

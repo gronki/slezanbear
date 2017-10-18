@@ -51,8 +51,11 @@ program sbmap_p
 
   call gdal_read_section(fni, llatsrc, llngsrc, ulatsrc, ulngsrc, mapi, gti)
 
-  allocate( maph(nint(abs(ulngsrc - llngsrc) * 0.6 / 9e-4 / 8), &
-  &              nint(abs(ulatsrc - llatsrc) * 1.0 / 9e-4 / 8)) )
+  allocate( maph( &
+  &   nint(abs(ulngsrc - llngsrc) / m2d(elev_grid_meters) &
+  &                               * cos(llat/2 + ulat/2)), &
+  &   nint(abs(ulatsrc - llatsrc) / m2d(elev_grid_meters)) &
+  &  ))
 
   write (*,'("dem raster size = ",2I6)') size(maph,1), size(maph,2)
 
@@ -83,29 +86,35 @@ program sbmap_p
     type(GDALRasterBandH) :: band
     integer :: errno
     type(geotransform) :: gtm
-    real(fp), dimension(:,:), allocatable :: I1, I2
+    real(fp), dimension(:,:), allocatable :: I1, I2, hobs
     integer nox,noy
 
-    nox = nint(abs(ulngsrc - llngsrc) * 0.6 / 22e-4 / 24)
-    noy = nint(abs(ulatsrc - llatsrc) * 1.0 / 22e-4 / 24)
-    allocate( I1(nox,noy), I2(nox,noy) )
+    nox = nint(abs(ulng - llng) / m2d(model_grid_meters) * cos(llat/2 + ulat/2))
+    noy = nint(abs(ulat - llat) / m2d(model_grid_meters))
+    allocate( I1(nox,noy), I2(nox,noy), hobs(nox,noy) )
 
-    write (*,'("intensity raster size = ",2I6)') nox, noy
+    write (*,'("model raster size = ",2I6)') nox, noy
 
     gtm % x0 = llng
     gtm % xi = (ulng - llng) / (nox - 1)
     gtm % y0 = ulat
     gtm % yj = (llat - ulat) / (noy - 1)
 
-    call sbmap(par, mapi, gti, maph, gth, I1, I2, gtm)
+    call sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gtm)
 
-    gd = GDALCreate(driver, 'model.tif' // char(0), nox, noy, 2, GDT_FLOAT64, c_null_ptr)
+    gd = GDALCreate(driver, 'model2.tif' // char(0), &
+    &               nox, noy, 3, GDT_FLOAT64, c_null_ptr)
 
     band = GDALGetRasterBand(gd,1)
     errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, I1)
     print '("GDALRasterIO_f, errno = ",I0)', errno
+
     band = GDALGetRasterBand(gd,2)
     errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, I2)
+    print '("GDALRasterIO_f, errno = ",I0)', errno
+
+    band = GDALGetRasterBand(gd,3)
+    errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, hobs)
     print '("GDALRasterIO_f, errno = ",I0)', errno
 
     errno = GDALSetGeoTransform(gd, [gtm % x0, gtm % xi, gtm % xj, &
@@ -113,7 +122,7 @@ program sbmap_p
     print '("GDALSetGeoTransform, errno = ",I0)', errno
     call GDALClose(gd)
 
-    deallocate( I1,I2 )
+    deallocate( I1, I2, hobs )
   end block compute_model
 
   deallocate(mapi, maph)
@@ -129,6 +138,11 @@ contains
     c2 =    (x2l + x2u) / 2
     r2 = abs(x2u - x2l) / 2
     overlap = ((r1 + r2) - abs(c1 - c2)) / (r1 + r2)
+  end function
+
+  elemental real(fp) function m2d(m) result(d)
+    real(fp), intent(in) :: m
+    d = (m / radearth) * (180 / pi)
   end function
 
 end program sbmap_p

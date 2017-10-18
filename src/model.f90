@@ -41,20 +41,19 @@ contains
     ! result: attenuation factor due to terrain (0 - obstruction, 1 - no obst)
     real(fp), intent(out) :: attn
     ! internal variables
-    integer, parameter :: nnmax = 2**10
     integer :: nn
     real(fp) :: raylength
 
     raylength = raydist(lat1, lng1, h1 / radearth, &
                       & lat2, lng2, h2 / radearth) * radearth
 
-    if ( abs(h1 - h2) / raylength > sin(30 * pi / 180) ) then
+    if ( abs(h1 - h2) / raylength > sin(chkray_maxangle * pi / 180) ) then
       attn = 1
       return
     end if
 
-    nn = nint(raylength / 250)
-    if (nn > nnmax) nn = nnmax
+    nn = nint(raylength / chkray_sect_meters)
+    if (nn > chkray_sect_num) nn = chkray_sect_num
     if (nn < 3) nn = 3
 
     trace_ray: block
@@ -102,7 +101,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  pure subroutine onepoint(par, lat, lng, src, maph, gth, I1, I2)
+  pure subroutine onepoint(par, lat, lng, src, maph, gth, I1, I2, hobs)
     type(modelpar), intent(in) :: par
     ! observer's latitude, longitude and
     real(fp), intent(in) :: lat, lng
@@ -111,15 +110,14 @@ contains
     ! altitude map and geotransform for the map
     real, dimension(:,:), intent(in) :: maph
     type(geotransform), intent(in) :: gth
-    real(fp), intent(out) :: I1, I2
+    real(fp), intent(out) :: I1, I2, hobs
 
     type(modelpar) :: par1
-    real(fp) :: tau, hobs
+    real(fp) :: tau
 
     integer i, j, k
-    integer, parameter :: nh = 2**6
-    real(fp) :: JJP(nh)
-    real(fp) :: hsct(nh), JJ(nh,4)
+    real(fp) :: JJP(height_sect_num)
+    real(fp) :: hsct(height_sect_num), JJ(height_sect_num,4)
 
     ! get the altitude of the observer (in meters)
     call interpolmap(maph, gth, lat, lng, hobs)
@@ -132,8 +130,8 @@ contains
 
     par1 = par
 
-    forall (i = 1:nh)
-      hsct(i) = genh(i, nh, hobs, 7 * par % hscale)
+    forall (i = 1:height_sect_num)
+      hsct(i) = genh(i, height_sect_num, hobs, 7 * par % hscale)
     end forall
 
     ! iterate through all map points
@@ -150,7 +148,7 @@ contains
           & hsct - src(i,j) % h, hobs - src(i,j) % h, &
           & JJ(:,1), JJ(:,2), JJ(:,3))
 
-      check_lines_all_heights: do k = 1,nh
+      check_lines_all_heights: do k = 1,height_sect_num
         call checkray(maph, gth,                                &
               & src(i,j) % lat, src(i,j) % lng, src(i,j) % h,   &
               & lat,            lng,            hsct(k),        &
@@ -181,7 +179,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  subroutine sbmap(par, mapi, gti, maph, gth, I1, I2, gt)
+  subroutine sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gt)
     ! model parameters
     type(modelpar), intent(in) :: par
     ! coordinates of the point
@@ -190,7 +188,7 @@ contains
     real(sp), dimension(:,:), intent(in) :: mapi, maph
     type(geotransform), intent(in) :: gti, gth, gt
     ! output
-    real(fp), intent(out), dimension(:,:) :: I1, I2
+    real(fp), intent(out), dimension(:,:) :: I1, I2, hobs
     ! source map for computation
     type(source), dimension(:,:), allocatable :: src
     integer :: i,j
@@ -202,8 +200,9 @@ contains
     do i = 1,size(I1,1)
       do j = 1,size(I1,2)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
+        call onepoint(par, lat, lng, src, maph, gth, &
+        &             I1(i,j), I2(i,j), hobs(i,j))
         write (*,'(I4,1X,I4)')  i, j
-        call onepoint(par, lat, lng, src, maph, gth, I1(i,j), I2(i,j))
       end do
     end do
     !$omp end parallel do
@@ -227,7 +226,7 @@ contains
   subroutine sbmap_c(  &
           & mapi, nxi, nyi, gi, &
           & maph, nxh, nyh, gh, &
-          & I1, I2, nx, ny, g) bind(C)
+          & I1, I2, hobs, nx, ny, g) bind(C)
     use iso_c_binding
     integer(c_int), intent(in), value :: nxi, nyi
     real(c_float), dimension(nxi,nyi), intent(in) :: mapi
@@ -235,12 +234,12 @@ contains
     real(c_float), dimension(nxh,nyh), intent(in) :: maph
     real(c_float), dimension(6), intent(in) :: gi, gh, g
     integer(c_int), intent(in), value :: nx, ny
-    real(c_double), dimension(nx,ny), intent(out) :: I1,I2
+    real(c_double), dimension(nx,ny), intent(out) :: I1,I2,hobs
     type(modelpar) :: par
     type(geotransform) :: gti, gth, gt
     call gti % import(gi)
     call gth % import(gh)
     call gt % import(g)
-    call sbmap(par, mapi, gti, maph, gth, I1, I2, gt)
+    call sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gt)
   end subroutine
 end module
