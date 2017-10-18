@@ -42,9 +42,8 @@ contains
     ! result: attenuation factor due to terrain (0 - obstruction, 1 - no obst)
     real(fp), intent(out) :: attn
     ! internal variables
-    integer, parameter :: nnmax = 2**11
+    integer, parameter :: nnmax = 2**10
     integer :: nn,i
-    real(fp), parameter :: smooth_meters = 0.1
     real(fp) :: raylength
     real(fp), dimension(nnmax) :: t, lat_ray, lng_ray, h_ray, hterr, Q
 
@@ -56,7 +55,7 @@ contains
       return
     end if
 
-    nn = nint(raylength / 100)
+    nn = nint(raylength / 250)
     if (nn > nnmax) nn = nnmax
     if (nn < 3) nn = 3
 
@@ -114,7 +113,7 @@ contains
     real(fp) :: tau, hobs
 
     integer i, j, k
-    integer, parameter :: nh = 2**8
+    integer, parameter :: nh = 2**6
     real(fp) :: JJP(nh)
     real(fp) :: hsct(nh), JJ(nh,4)
 
@@ -130,7 +129,7 @@ contains
     par1 = par
 
     forall (i = 1:nh)
-      hsct(i) = genh(i, nh, hobs, 2.3 * 6 * par % hscale)
+      hsct(i) = genh(i, nh, hobs, 7 * par % hscale)
     end forall
 
     ! iterate through all map points
@@ -193,10 +192,13 @@ contains
 
     !$omp parallel do private(j,lat,lng)
     do i = 1,size(I1,1)
-      write (*,'(I0," / ",I0)') i, size(I1,1)
       do j = 1,size(I1,2)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
+        src(:,:) % mask = (src % em .ne. 0) &
+            & .and. (angdist(lat, lng, src % lat, src % lng) &
+            & .le. (dmax / radearth))
         call onepoint(par, lat, lng, src, maph, gth, I1(i,j), I2(i,j))
+        write (*,'(I0," x ",I0)') i, j
       end do
     end do
     !$omp end parallel do

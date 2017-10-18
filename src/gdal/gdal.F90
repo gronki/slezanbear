@@ -25,7 +25,7 @@
 !! refer to the original gdal C API documentation, e.g. at the address
 !! http://www.gdal.org/gdal_8h.html , for their use:
 #include "gdalproto_doxy.f90"
-!! 
+!!
 !! As a general guideline, note that when a \c char** object is
 !! encountered in the C interface, it should usually be interfaced in
 !! Fortran by means of the fortranc::c_ptr_ptr derived type.
@@ -354,7 +354,7 @@ FUNCTION gdaldatasetrasterio_int8(hds, erwflag, ndsxoff, ndsyoff, pbuffer) RESUL
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int8_t),INTENT(inout) :: pbuffer(:,:,:)
+INTEGER(kind=c_int8_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -388,7 +388,7 @@ FUNCTION gdaldatasetrasterio_int16(hds, erwflag, ndsxoff, ndsyoff, pbuffer) RESU
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int16_t),INTENT(inout) :: pbuffer(:,:,:)
+INTEGER(kind=c_int16_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -422,7 +422,7 @@ FUNCTION gdaldatasetrasterio_int32(hds, erwflag, ndsxoff, ndsyoff, pbuffer) RESU
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int32_t),INTENT(inout) :: pbuffer(:,:,:)
+INTEGER(kind=c_int32_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -456,7 +456,7 @@ FUNCTION gdaldatasetrasterio_float(hds, erwflag, ndsxoff, ndsyoff, pbuffer) RESU
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-REAL(kind=c_float),INTENT(inout) :: pbuffer(:,:,:)
+REAL(kind=c_float),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -490,7 +490,7 @@ FUNCTION gdaldatasetrasterio_double(hds, erwflag, ndsxoff, ndsyoff, pbuffer) RES
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-REAL(kind=c_double),INTENT(inout) :: pbuffer(:,:,:)
+REAL(kind=c_double),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -524,7 +524,7 @@ FUNCTION gdaldatasetrasterio_float_cmplx(hds, erwflag, ndsxoff, ndsyoff, pbuffer
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-COMPLEX(kind=c_float_complex),INTENT(inout) :: pbuffer(:,:,:)
+COMPLEX(kind=c_float_complex),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -558,7 +558,7 @@ FUNCTION gdaldatasetrasterio_double_cmplx(hds, erwflag, ndsxoff, ndsyoff, pbuffe
 TYPE(gdaldataseth),VALUE :: hds
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-COMPLEX(kind=c_double_complex),INTENT(inout) :: pbuffer(:,:,:)
+COMPLEX(kind=c_double_complex),INTENT(inout),CONTIGUOUS :: pbuffer(:,:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 INTEGER(kind=c_int) :: i
@@ -595,7 +595,7 @@ FUNCTION gdalrasterio_int8(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RESULT(err
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int8_t),INTENT(inout) :: pbuffer(:,:)
+INTEGER(kind=c_int8_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -623,7 +623,7 @@ FUNCTION gdalrasterio_int16(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RESULT(er
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int16_t),INTENT(inout) :: pbuffer(:,:)
+INTEGER(kind=c_int16_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -651,7 +651,7 @@ FUNCTION gdalrasterio_int32(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RESULT(er
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-INTEGER(kind=c_int32_t),INTENT(inout) :: pbuffer(:,:)
+INTEGER(kind=c_int32_t),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -679,7 +679,7 @@ FUNCTION gdalrasterio_float(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RESULT(er
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-REAL(kind=c_float),INTENT(inout) :: pbuffer(:,:)
+REAL(kind=c_float),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -707,7 +707,7 @@ FUNCTION gdalrasterio_double(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RESULT(e
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-REAL(kind=c_double),INTENT(inout) :: pbuffer(:,:)
+REAL(kind=c_double),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -735,7 +735,7 @@ FUNCTION gdalrasterio_float_cmplx(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RES
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-COMPLEX(kind=c_float_complex),INTENT(inout) :: pbuffer(:,:)
+COMPLEX(kind=c_float_complex),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &
@@ -763,7 +763,7 @@ FUNCTION gdalrasterio_double_cmplx(hband, erwflag, ndsxoff, ndsyoff, pbuffer) RE
 TYPE(gdalrasterbandh),VALUE :: hband
 INTEGER(kind=c_int),INTENT(in) :: erwflag
 INTEGER(kind=c_int),INTENT(in) :: ndsxoff, ndsyoff
-COMPLEX(kind=c_double_complex),INTENT(inout) :: pbuffer(:,:)
+COMPLEX(kind=c_double_complex),INTENT(inout),CONTIGUOUS :: pbuffer(:,:)
 INTEGER(kind=c_int) :: err ! CPLErr
 
 err = gdalrasterio_loc(hband, erwflag, ndsxoff, ndsyoff, &

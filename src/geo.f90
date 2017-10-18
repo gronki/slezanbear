@@ -5,25 +5,30 @@ module geo
   implicit none
 
   type geotransform
-    !            g(1)  g(2)  g(3)
-    real(r64) :: x0,   xi,    xj
-    !            g(4)  g(5)  g(6)
-    real(r64) :: y0,   yi,    yj
+    !             g(1)    g(2)    g(3)
+    real(r64) :: x0 = 0, xi = 1, xj = 0
+    !             g(4)    g(5)    g(6)
+    real(r64) :: y0 = 0, yi = 0, yj = 1
   contains
-    procedure :: det => geotransform_det
-    procedure, private :: geotransform_import_32
-    procedure, private :: geotransform_import_64
-    generic :: import => geotransform_import_32, geotransform_import_64
+    procedure :: det => gtdet
+    procedure, private :: gtimport_32
+    procedure, private :: gtimport_64
+    generic :: import => gtimport_32, gtimport_64
   end type
+
+  interface gtinit
+    module procedure :: gtimport_32
+    module procedure :: gtimport_64
+  end interface
 
 contains
 
-  elemental pure real(fp) function geotransform_det(gt) result(det)
+  elemental pure real(fp) function gtdet(gt) result(det)
     class(geotransform), intent(in) :: gt
     det = (gt % xi) * (gt % yj) - (gt % xj) * (gt % yi)
   end function
 
-  pure subroutine geotransform_import_32(gt,g)
+  pure subroutine gtimport_32(gt,g)
     class(geotransform), intent(inout) :: gt
     real(r32), dimension(6), intent(in) :: g
     gt % x0 = g(1)
@@ -34,7 +39,7 @@ contains
     gt % yj = g(6)
   end subroutine
 
-  pure subroutine geotransform_import_64(gt,g)
+  pure subroutine gtimport_64(gt,g)
     class(geotransform), intent(inout) :: gt
     real(r64), dimension(6), intent(in) :: g
     gt % x0 = g(1)
@@ -137,19 +142,50 @@ contains
 
     call geo2arr(gt, lat, lng, xi, xj)
 
-    ri = xi - floor(xi)
-    rj = xj - floor(xj)
+    ki = max(1, min(floor(xi), size(map,1) - 1))
+    kj = max(1, min(floor(xj), size(map,2) - 1))
 
-    ki = nint(xi - ri)
-    kj = nint(xj - rj)
+    ri = xi - ki
+    rj = xj - kj
 
-    if ( ki >= 1 .and. ki <= size(map,1) - 1 &
-        & .and. kj >= 1 .and. kj <= size(map,2) - 1 ) then
-      mout    = map(ki,   kj  ) * (1 - ri)  * (1 - rj)  &
-      &       + map(ki+1, kj  ) * ri        * (1 - rj)  &
-      &       + map(ki,   kj+1) * (1 - ri)  * rj        &
-      &       + map(ki+1, kj+1) * ri        * rj
+    if ( abs(2 * ri - 1) .le. 2 .and. abs(2 * rj - 1) .le. 2 ) then
+      mout  = map(ki,   kj  ) * (1 - ri)  * (1 - rj)  &
+      &     + map(ki+1, kj  ) * ri        * (1 - rj)  &
+      &     + map(ki,   kj+1) * (1 - ri)  * rj        &
+      &     + map(ki+1, kj+1) * ri        * rj
     end if
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------
+
+  subroutine projectmap(mapsrc, gtsrc, mapdest, gtdest)
+    real(sp), intent(in), dimension(:,:) :: mapsrc
+    real(sp), intent(out), dimension(:,:) :: mapdest
+    type(geotransform), intent(in) :: gtsrc, gtdest
+    integer i,j
+    integer ki, kj
+    real(fp) lat, lng, ri, rj, xi, xj
+
+    print '("PROJECTMAP",2I10)',  shape(mapsrc), shape(mapdest)
+
+    do concurrent (i = 1:size(mapdest,1), j = 1:size(mapdest,2))
+      call arr2geo(gtdest, real(i,fp), real(j,fp), lat, lng)
+      call geo2arr(gtsrc, lat, lng, xi, xj)
+
+      ki = max(1, min(floor(xi), size(mapsrc,1) - 1))
+      kj = max(1, min(floor(xj), size(mapsrc,2) - 1))
+
+      ri = xi - ki
+      rj = xj - kj
+
+      if ( abs(2 * ri - 1) .le. 2 .and. abs(2 * rj - 1) .le. 2 ) then
+        mapdest(i,j) = mapsrc(ki,   kj  ) * (1 - ri)  * (1 - rj)  &
+        &            + mapsrc(ki+1, kj  ) * ri        * (1 - rj)  &
+        &            + mapsrc(ki,   kj+1) * (1 - ri)  * rj        &
+        &            + mapsrc(ki+1, kj+1) * ri        * rj
+      end if
+    end do
 
   end subroutine
 

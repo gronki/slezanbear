@@ -1,6 +1,7 @@
 PREFIX = /usr/local
-FC = ifort
+FC = gfortran
 FFLAGS = -g -O2
+LDLIBS = -lgdal
 
 ifeq ($(FC),gfortran)
 FFLAGS += -mieee-fp
@@ -13,31 +14,31 @@ FFLAGS += -warn all -Winline
 FFLAGS += -qopenmp
 endif
 
-VPATH = src
-SOURCES = globals.f90 geo.f90 kernel.f90 model.f90
-OBJECTS = $(SOURCES:.f90=.o)
+VPATH = src:src/gdal:src/test
+OBJECTS = globals.o geo.o kernel.o model.o maputils.o gdal.o
 
-all: libslezanbear.so testbin/testr testbin/testw
+all: libslezanbear.so bin/sbmap testbin/testr testbin/testw
 
 include deps.inc
 
-testbin/testw: LDLIBS += -lgdal
-testbin/testw: test/gdal_test_common.f90 test/gdal_write_test.f90 gdal.o $(OBJECTS)
+testbin/testw: gdal_test_common.o gdal_write_test.o $(OBJECTS)
 	mkdir -p testbin
 	$(FC) $(FFLAGS) $^ $(LDLIBS) -o $@
-testbin/testr: LDLIBS += -lgdal
-testbin/testr: test/gdal_test_common.f90 test/gdal_read_test.f90 gdal.o $(OBJECTS)
+testbin/testr: gdal_test_common.o gdal_read_test.o $(OBJECTS)
 	mkdir -p testbin
 	$(FC) $(FFLAGS) $^ $(LDLIBS) -o $@
-
-gdal.o: gdal/gdal.F90
-	$(FC) $(FFLAGS) -c $< -o $@
 
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $< -o $@
+%.o: %.F90
+	$(FC) $(CPPFLAGS) $(FFLAGS) -c $< -o $@
 
-libslezanbear.so: $(SOURCES)
-	$(FC) $(FFLAGS) -shared -fPIC $^ $(LDLIBS) -o $@
+bin/%: %.o $(OBJECTS)
+	mkdir -p bin
+	$(FC) $(FFLAGS) $^ $(LDLIBS) -o $@
+
+libslezanbear.so: globals.f90 geo.f90 kernel.f90 model.f90
+	$(FC) $(FFLAGS) -shared -fPIC $^ -o $@
 
 clean:
 	$(RM) *.o *.mod *.so
