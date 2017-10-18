@@ -4,10 +4,11 @@ module kernel
   implicit none
 
   type modelpar
-    real(fp) :: skybg = 0
-    real(fp) :: alpha = 0.4
-    real(fp) :: relabs = 0.75
-    real(fp) :: hscale = 8000.0
+    real(fp) :: skybg  = 1.5d-10
+    real(fp) :: alpha  = 0.4
+    real(fp) :: relabs = 0.5
+    real(fp) :: hscale = 5000.0
+    real(fp) :: beta   = 0.2
   end type
 
 contains
@@ -62,7 +63,7 @@ contains
 
     elemental real(fp) function g(costh)
       real(fp), intent(in) :: costh
-      g = 1
+      g = 0.75_fp * (1 + costh**2)
     end function
 
     elemental real(fp) function E0(cosg) result(E)
@@ -92,7 +93,7 @@ contains
 
     elemental real(fp) function E(cosg)
       real(fp), intent(in) :: cosg
-      E = E0(cosg)
+      E = E0(cosg) * (1 - par % beta) + E4(cosg) * (par % beta)
     end function
 
   end subroutine
