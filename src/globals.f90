@@ -11,9 +11,14 @@ module globals
 
   character(*), parameter :: outfn = 'model4.tif'
 
-  real(fp) :: llat = 50.70, llng = 16.50
-  real(fp) :: ulat = 51.50, ulng = 17.50
-  real(fp) :: dmax = 200e3
+  real(fp), parameter :: magconst = 7.5
+
+  real(fp) :: llat = 50.70, llng = 14.80
+  real(fp) :: ulat = 51.00, ulng = 15.85
+  ! real(fp) :: llat = 50.70, llng = 16.50
+  ! real(fp) :: ulat = 51.50, ulng = 17.50
+
+  real(fp) :: dmax = 120e3
 
   real(fp)           :: model_grid_meters   = 500
   real(fp)           :: elev_grid_meters    = 125

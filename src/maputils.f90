@@ -181,4 +181,35 @@ contains
     call GDALClose(gd)
   end subroutine
 
+  !-----------------------------------------------------------------------------
+
+  subroutine binmap(map, gt, b)
+    real(sp), dimension(:,:), allocatable, intent(inout) :: map
+    type(geotransform), intent(inout) :: gt
+    integer, intent(in) :: b
+    real(sp), dimension(:,:), allocatable :: buf
+    real(fp) :: x0, y0
+    integer :: i,j
+
+    allocate(buf(floor(size(map,1) / real(b)), &
+    &            floor(size(map,2) / real(b))))
+
+    forall (i = 1:size(buf,1), j = 1:size(buf,2))
+      buf(i,j) = sum(map(1 + (i-1) * b : i * b, 1 + (j-1) * b : j * b)) / b**2
+    end forall
+
+    call arr2geo(gt, (b + 1d0) / 2, (b + 1d0) / 2, y0, x0)
+
+    gt % x0 = x0
+    gt % y0 = y0
+    gt % xi = b * (gt % xi)
+    gt % xj = b * (gt % xj)
+    gt % yi = b * (gt % yi)
+    gt % yj = b * (gt % yj)
+
+    deallocate(map)
+    call move_alloc(buf, map)
+
+  end subroutine
+
 end module maputils

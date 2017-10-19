@@ -4,11 +4,11 @@ module kernel
   implicit none
 
   type modelpar
-    real(fp) :: skybg  = 1.5d-10
-    real(fp) :: alpha  = 0.4
-    real(fp) :: relabs = 0.5
+    real(fp) :: skybg  = 10**((magconst - 22.0) / 2.5)
+    real(fp) :: alpha  = 0.12
+    real(fp) :: relabs = 0.75
     real(fp) :: hscale = 5000.0
-    real(fp) :: beta   = 0.2
+    real(fp) :: beta   = 0.3
   end type
 
 contains
@@ -98,5 +98,16 @@ contains
 
   end subroutine
 
+  !-----------------------------------------------------------------------------
+
+  elemental real(fp) function ity2mag(ity) result(mag)
+    real(fp), intent(in) :: ity
+    mag = magconst - 2.5 * log10(ity)
+  end function
+
+  elemental real(fp) function mag2ity(mag) result(ity)
+    real(fp), intent(in) :: mag
+    ity = 10**((magconst - mag) / 2.5)
+  end function
 
 end module

@@ -93,7 +93,7 @@ contains
 
       call interpolmap(maph, gth, src(i,j) % lat, src(i,j) % lng, src(i,j) % h)
 
-      src(i,j) % em = mapi(i,j)
+      src(i,j) % em = mapi(i,j) * 1e-5
     end do
   end subroutine
 
@@ -156,11 +156,11 @@ contains
       end if
 
       JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3)
-      I1 = I1 + (src(i,j) % em) * 1e-9 * integrate(JJP, hsct)
+      I1 = I1 + (src(i,j) % em) * integrate(JJP, hsct)
 
       if ( terrain_attenuation ) then
         JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3) * JJ(:,4)
-        I2 = I2 + (src(i,j) % em) * 1e-9 * integrate(JJP, hsct)
+        I2 = I2 + (src(i,j) % em) * integrate(JJP, hsct)
       end if
 
     end do

@@ -22,7 +22,8 @@ program sbmap_p
 
   !! dmax = 1.05 * radearth * acos(1 / (1 + 5 * par % hscale / radearth))
   print '("dmax = ",F0.2," km")', dmax / 1e3
-  call estimate_data_limits(llat, llng, ulat, ulng, dmax, llatsrc, llngsrc, ulatsrc, ulngsrc)
+  call estimate_data_limits(llat, llng, ulat, ulng, dmax * 1.05, &
+  &       llatsrc, llngsrc, ulatsrc, ulngsrc)
 
   print '("data limits = ",F6.2,1X,F7.2)', llatsrc, llngsrc, ulatsrc, ulngsrc
 
@@ -50,6 +51,7 @@ program sbmap_p
   driver = GDALGetDriverByName('GTiff' // char(0))
 
   call gdal_read_section(fni, llatsrc, llngsrc, ulatsrc, ulngsrc, mapi, gti)
+  write (0, '("satellite raster size = ", 2I6)') size(mapi,1), size(mapi,2)
 
   allocate( maph( &
   &   nint(abs(ulngsrc - llngsrc) / m2d(elev_grid_meters) &
