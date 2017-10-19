@@ -29,49 +29,73 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  pure subroutine checkray(maph, gth, lat1, lng1, h1, lat2, lng2, h2, attn)
+  pure subroutine checkray(maph, gth, src, lat, lng, hsct, attn)
     ! altitude map and geotransform
     real, dimension(:,:), intent(in) :: maph
     type(geotransform), intent(in) :: gth
     ! two points and their relative heights (h / R)
-    real(fp), intent(in) :: lat1, lng1, h1
-    real(fp), intent(in) :: lat2, lng2, h2
+    type(source), intent(in) :: src
+    real(fp), intent(in) :: lat, lng, hsct(:)
     ! result: attenuation factor due to terrain (0 - obstruction, 1 - no obst)
-    real(fp), intent(out) :: attn
+    real(fp), intent(out) :: attn(:)
     ! internal variables
     integer :: nn
-    real(fp) :: raylength
+    real(fp) :: adist
 
-    raylength = raydist(lat1, lng1, h1 / radearth, &
-                      & lat2, lng2, h2 / radearth) * radearth
+    adist = angdist(src % lat, src % lng, lat, lng)
 
-    if ( abs(h1 - h2) / raylength > sin(chkray_maxangle * pi / 180) ) then
-      attn = 1
-      return
-    end if
-
-    nn = nint(raylength / chkray_sect_meters)
+    nn = nint(radearth * adist / chkray_sect_meters)
     if (nn > chkray_sect_num) nn = chkray_sect_num
     if (nn < 3) nn = 3
 
     trace_ray: block
 
       real(fp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr, Q
-      integer :: i
+      real(fp), dimension(3) :: x1, x2, xi, xw, xr
+      integer :: i, j
 
       forall (i = 1:nn) t(i) = real(i,fp) / nn
 
-      call georay(lat1, lng1, h1 / radearth, lat2, lng2, h2 / radearth, &
-        & t, lat_ray, lng_ray, h_ray)
+      call geo2xyz(src % lat, src % lng, x1(1), x1(2), x1(3))
+      call geo2xyz(      lat,       lng, x2(1), x2(2), x2(3))
 
-      do concurrent (i = 1:nn)
+      call cross(x1, x2, xi)
+      call cross(xi / sqrt(sum(xi**2)), x1, xw)
+
+      interpolate_terrain: do i = 1, nn
+        xi(:) = x1 * cos(t(i) * adist) + xw * sin(t(i) * adist)
+        call xyz2geo(xi(1), xi(2), xi(3), lat_ray(i), lng_ray(i))
         call interpolmap(maph, gth, lat_ray(i), lng_ray(i), hterr(i))
-      end do
+      end do interpolate_terrain
 
-      Q(:) = (h_ray * radearth - hterr) / (raylength * t)
-      attn = th(minval(Q) / real(0.001,fp))
+      along_heights: do j = 1, size(hsct)
+
+        if ( hsct(j) > radearth * adist ) then
+          attn(j) = 1
+          cycle along_heights
+        end if
+
+        calc_hray: do i = 1, nn
+          xr(:) = x1 * (1 - t(i)) * (radearth + src % h ) &
+          &     + x2 * t(i)       * (radearth + hsct(j) )
+          h_ray(i) = sqrt(sum(xr**2)) - radearth
+        end do calc_hray
+
+        Q(:) = (h_ray - hterr) / (adist * radearth * t)
+        attn(j) = th(minval(Q) / real(0.001,fp))
+      end do along_heights
 
     end block trace_ray
+
+  contains
+
+    pure subroutine cross(x,y,z)
+      real(fp), dimension(3), intent(in) :: x,y
+      real(fp), dimension(3), intent(out) :: z
+      z(1) =   x(2)*y(3) - x(3)*y(2)
+      z(2) = - x(1)*y(3) + x(3)*y(1)
+      z(3) =   x(1)*y(2) - x(2)*y(1)
+    end subroutine
 
   end subroutine checkray
 
@@ -146,20 +170,12 @@ contains
           & hsct - src(i,j) % h, hobs - src(i,j) % h, &
           & JJ(:,1), JJ(:,2), JJ(:,3))
 
-      if (terrain_attenuation) then
-        check_lines_all_heights: do k = 1,height_sect_num
-          call checkray(maph, gth,                          &
-          & src(i,j) % lat, src(i,j) % lng, src(i,j) % h,   &
-          & lat,            lng,            hsct(k),        &
-          & JJ(k,4))
-        end do check_lines_all_heights
-      end if
-
       JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3)
       I1 = I1 + (src(i,j) % em) * integrate(JJP, hsct)
 
       if ( terrain_attenuation ) then
-        JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3) * JJ(:,4)
+        call checkray(maph, gth, src(i,j), lat, lng, hsct, JJ(:,4))
+        JJP(:) = JJP * JJ(:,4)
         I2 = I2 + (src(i,j) % em) * integrate(JJP, hsct)
       end if
 
