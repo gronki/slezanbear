@@ -110,27 +110,6 @@ contains
 
   !-----------------------------------------------------------------------------
 
-
-  pure subroutine georay(lat1, lng1, h1, lat2, lng2, h2, t, latx, lngx, hx)
-    real(fp), intent(in) :: lat1, lng1, lat2, lng2, h1, h2
-    real(fp), dimension(:), intent(in) :: t
-    real(fp), dimension(:), intent(out) :: latx, lngx, hx
-    real(fp), dimension(3) :: x1, x2, xi
-    integer :: i
-
-    call geo2xyz(lat1, lng1, x1(1), x1(2), x1(3))
-    call geo2xyz(lat2, lng2, x2(1), x2(2), x2(3))
-
-    do concurrent (i = 1:size(t))
-      xi = (1 - t(i)) * x1 * (1 + h1) + t(i) * x2 * (1 + h2)
-      hx(i) = sqrt(xi(1)**2 + xi(2)**2 + xi(3)**2) - 1
-      call xyz2geo(xi(1), xi(2), xi(3), latx(i), lngx(i))
-    end do
-
-  end subroutine
-
-  !-----------------------------------------------------------------------------
-
   pure subroutine interpolmap(map, gt, lat, lng, mout)
     real, intent(in), dimension(:,:) :: map
     real(fp), intent(in) :: lat, lng
