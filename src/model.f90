@@ -82,7 +82,7 @@ contains
         end do calc_hray
 
         Q(:) = (h_ray - hterr) / (adist * radearth * t)
-        attn(j) = th(minval(Q) / real(0.001,fp))
+        attn(j) = th(minval(Q) / real(0.01,fp) + 0.5)
       end do along_heights
 
     end block trace_ray

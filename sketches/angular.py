@@ -52,8 +52,8 @@ g4 = lambda costh: 30 * costh * (1 - costh)**3 * where(costh > 0, 1, 0)
 alb = 0.15
 g = lambda costh: 0.5 * (glamp(costh) + alb * (lamp_flxdn / refl_flxup) * grefl(costh)) / (lamp_flxup + alb * lamp_flxdn)
 
-a = 0.2
-g = lambda costh: (1 - a) * g1(costh) + a * g3(costh)
+a = 0.3
+g = lambda costh: (1 - a) * g1(costh) + a * g4(costh)
 
 print "LAMP " + fluxu(glamp)
 print "REFL " + fluxu(grefl)

@@ -51,6 +51,8 @@ program sbmap_p
   driver = GDALGetDriverByName('GTiff' // char(0))
 
   call gdal_read_section(fni, llatsrc, llngsrc, ulatsrc, ulngsrc, mapi, gti)
+  !call binmap(mapi, gti, 3)
+
   write (0, '("satellite raster size = ", 2I6)') size(mapi,1), size(mapi,2)
 
   allocate( maph( &

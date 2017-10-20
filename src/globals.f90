@@ -9,25 +9,24 @@ module globals
   real(fp), parameter :: pi = 4 * atan(real(1,fp))
   real(fp), parameter :: deg_in_rad = 180 / pi
 
-  character(*), parameter :: outfn = 'model4.tif'
+  character(*), parameter :: outfn = 'model_sil_hires.tif'
 
-  real(fp), parameter :: magconst = 7.5
+  real(fp), parameter :: magconst = 5.5
 
-  real(fp) :: llat = 50.70, llng = 14.80
-  real(fp) :: ulat = 51.00, ulng = 15.85
-  ! real(fp) :: llat = 50.70, llng = 16.50
-  ! real(fp) :: ulat = 51.50, ulng = 17.50
+  ! real(fp) :: llat = 50.60, llng = 14.80
+  ! real(fp) :: ulat = 51.20, ulng = 15.90
+  real(fp) :: llat = 50.50, llng = 14.80
+  real(fp) :: ulat = 51.50, ulng = 17.70
 
-  real(fp) :: dmax = 120e3
+  real(fp) :: dmax = 200e3
 
-  real(fp)           :: model_grid_meters   = 500
+  real(fp)           :: model_grid_meters   = 250
   real(fp)           :: elev_grid_meters    = 125
 
-  integer, parameter :: height_sect_num     = 80
+  integer, parameter :: height_sect_num     = 90
 
-  logical :: terrain_attenuation = .false.
-  real(fp)           :: chkray_sect_meters  = 125
-  real(fp)           :: chkray_maxangle     = 30
-  integer, parameter :: chkray_sect_num     = 1024
+  logical :: terrain_attenuation = .true.
+  real(fp)           :: chkray_sect_meters  = 250
+  integer, parameter :: chkray_sect_num     = 2048
 
 end module
