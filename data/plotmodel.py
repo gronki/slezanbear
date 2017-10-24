@@ -2,44 +2,93 @@
 import gdal
 import numpy as np
 import matplotlib.pyplot as plt
+from sys import argv
+from re import match, sub
 
-# fn0 = 'model_izer_hires'
-fn0 = 'model_wroc_hires'
+i2m = lambda i: 5.5 - 2.5 * np.log10(i)
+m2i = lambda m: 10 ** ((5.5 - m) / 2.5)
 
-gd = gdal.Open(fn0 + '.tif')
-gt = gd.GetGeoTransform()
-nx = gd.RasterXSize
-ny = gd.RasterYSize
-arr = gd.ReadAsArray()
+clevels = [
+    17.000,
+    18.000,
+    19.000,
+    19.500,
+    20.000,
+    20.500,
+    20.750,
+    21.000,
+    21.125,
+    21.250,
+    21.375,
+    21.500,
+    21.550,
+    21.600,
+    21.650,
+    21.700,
+]
 
-fs = ( 8 * np.sqrt(nx/float(ny)), 6 / np.sqrt(nx/float(ny)) )
+ccolors = [
+    '#FAF4D7',
+    '#DED226',
+    '#F49136',
+    '#B65950',
+    '#D96228',
+    '#949935',
+    '#628A29',
+    '#1FA364',
+    '#15ACA3',
+    '#1E737C',
+    '#0C4654',
+    '#1E3542',
+    '#0B2737',
+    '#062012',
+    '#1A0F28',
+    '#0C0A0E',
+]
 
-ex = [ gt[0], gt[0] + nx * gt[1], 
-       gt[3] + ny * gt[5], gt[3] ]
+for fn in argv[1:]:
 
-i2m = lambda i: 7.5 - 2.5 * np.log10(i)
-m2i = lambda m: 10 ** ((7.5 - m) / 2.5)
+    if not match(r'.*\.tif$', fn): continue
 
-fig,ax = plt.subplots(figsize = fs)
-m = ax.imshow(arr[2,:,:], cmap = 'BrBG_r')
-plt.colorbar(m, ax = ax)
-plt.savefig(fn0 + '.1.png', dpi = 144)
+    gd = gdal.Open(fn)
+    gt = gd.GetGeoTransform()
+    nx = gd.RasterXSize
+    ny = gd.RasterYSize
+    arr = gd.ReadAsArray()
 
-fig,ax = plt.subplots(figsize = fs)
-m = ax.imshow(i2m(arr[1,:,:] + m2i(22)), vmin = 18, vmax = 22, cmap = 'inferno_r')
-plt.colorbar(m, ax = ax)
-m = ax.contour(i2m(arr[1,:,:] + m2i(22)), levels = [18, 19, 20, 20.5, 20.75, 21, 21.25, 21.5, 21.75, 22 ], colors = 'white')
-plt.clabel(m, fontsize = 8)
-plt.savefig(fn0 + '.2.png', dpi = 144)
+    fs = ( 8 * np.sqrt(nx/float(ny)), 6 / np.sqrt(nx/float(ny)) )
 
-fig,ax = plt.subplots(figsize = fs)
-m = ax.imshow(i2m(arr[0,:,:] + m2i(22)), vmin = 18, vmax = 22, cmap = 'inferno_r')
-plt.colorbar(m, ax = ax)
-m = ax.contour(i2m(arr[0,:,:] + m2i(22)), levels = [18, 19, 20, 20.5, 20.75, 21, 21.25, 21.5, 21.75, 22 ], colors = 'white')
-plt.clabel(m, fontsize = 8)
-plt.savefig(fn0 + '.2b.png', dpi = 144)
+    ex = [ gt[0], gt[0] + nx * gt[1],
+           gt[3] + ny * gt[5], gt[3] ]
 
-fig,ax = plt.subplots(figsize = fs)
-m = ax.imshow(-2.5 * np.log10((arr[1,:,:] + m2i(22)) / (arr[0,:,:] + m2i(22))), cmap = 'inferno_r', vmin = 0)
-plt.colorbar(m, ax = ax)
-plt.savefig(fn0 + '.3.png', dpi = 144)
+
+    x = np.linspace(gt[0], gt[0] + nx * gt[1], nx)
+    y = np.linspace(gt[3], gt[3] + ny * gt[5], ny)
+
+    fig,ax = plt.subplots(figsize = fs)
+    m = ax.imshow(arr[2,:,:], cmap = 'BrBG_r')
+    ax.set_aspect('auto')
+
+    plt.colorbar(m, ax = ax)
+    plt.savefig(sub(r'\.tif$','.el.png',fn), dpi = 144, interpolation = 'none')
+
+    fig,ax = plt.subplots(figsize = fs)
+    m = ax.contourf(x, y, i2m(arr[1,:,:] + m2i(22)), levels = clevels, colors = ccolors)
+    plt.colorbar(m, ax = ax)
+    ax.set_aspect('auto')
+
+    plt.savefig(sub(r'\.tif$','.png',fn), dpi = 144)
+
+    fig,ax = plt.subplots(figsize = fs)
+    m = ax.contourf(x, y, i2m(arr[0,:,:] + m2i(22)), levels = clevels, colors = ccolors)
+    ax.set_aspect(1 / np.cos(51.0 * np.pi / 180))
+    ax.set_aspect('auto')
+    plt.colorbar(m, ax = ax)
+    plt.savefig(sub(r'\.tif$','.noat.png',fn), dpi = 144)
+
+    fig,ax = plt.subplots(figsize = fs)
+    m = ax.imshow(-2.5 * np.log10((arr[1,:,:] + m2i(22)) / (arr[0,:,:] + m2i(22))), cmap = 'gray_r', vmin = 0, vmax = 0.1, interpolation = 'none')
+    ax.set_aspect('auto')
+
+    plt.colorbar(m, ax = ax)
+    plt.savefig(sub(r'\.tif$','.atdiff.png',fn), dpi = 144)
