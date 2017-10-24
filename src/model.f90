@@ -54,7 +54,7 @@ contains
       real(fp), dimension(3) :: x1, x2, xi, xw, xr
       integer :: i, j
 
-      forall (i = 1:nn) t(i) = real(i,fp) / (nn + 1)
+      forall (i = 1:nn) t(i) = f(real(i,fp) / (nn + 1), 2.0_fp)
 
       call geo2xyz(src % lat, src % lng, x1(1), x1(2), x1(3))
       call geo2xyz(      lat,       lng, x2(1), x2(2), x2(3))
@@ -96,6 +96,12 @@ contains
       z(2) = - x(1)*y(3) + x(3)*y(1)
       z(3) =   x(1)*y(2) - x(2)*y(1)
     end subroutine
+
+    elemental real(fp) function f(t, k)
+      real(fp), intent(in) :: t, k
+      f = 2 * t + (k - 1) * t**2
+      f = f / (k + 1)
+    end function
 
   end subroutine checkray
 
