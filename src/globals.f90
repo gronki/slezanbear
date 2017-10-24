@@ -11,7 +11,6 @@ module globals
 
   character(*), parameter :: outfn = 'model_sil_hires.tif'
 
-  real(fp), parameter :: magconst = 5.5
 
   ! real(fp) :: llat = 50.60, llng = 14.80
   ! real(fp) :: ulat = 51.20, ulng = 15.90

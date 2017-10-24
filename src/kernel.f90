@@ -4,12 +4,14 @@ module kernel
   implicit none
 
   type modelpar
-    real(fp) :: skybg  = 0 !10**((magconst - 22.0) / 2.5)
+    real(fp) :: skybg  = 3e-7
     real(fp) :: alpha  = 0.12
     real(fp) :: relabs = 0.75
-    real(fp) :: hscale = 5000.0
+    real(fp) :: hscale = 8000
     real(fp) :: beta   = 0.3
   end type
+
+  real(fp), parameter, private :: magconst = 5.5
 
 contains
 
