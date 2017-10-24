@@ -90,13 +90,14 @@ program sbmap_p
     type(GDALRasterBandH) :: band
     integer :: errno
     type(geotransform) :: gtm
-    real(fp), dimension(:,:), allocatable :: I1, I2, hobs
-    integer nox,noy
+    real(fp), dimension(:,:), allocatable :: hobs
+    real(fp), dimension(:,:,:), allocatable :: sky
+    integer nox,noy,i
     real(fp) :: t0,t1
 
     nox = nint(abs(ulng - llng) / m2d(model_grid_meters) * cos(llat/2 + ulat/2))
     noy = nint(abs(ulat - llat) / m2d(model_grid_meters))
-    allocate( I1(nox,noy), I2(nox,noy), hobs(nox,noy) )
+    allocate( sky(nox,noy,4), hobs(nox,noy) )
 
     write (*,'("model raster size = ",2I6)') nox, noy
 
@@ -108,32 +109,30 @@ program sbmap_p
     gtm % yj = (llat - ulat) / (noy - 1)
 
     call cpu_time(t0)
-    call sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gtm)
+    call sbmap(par, mapi, gti, maph, gth, sky, hobs, gtm)
     call cpu_time(t1)
 
-    write (*, '("CPUTIME = ",F0.2)') t1 - t0
+    write (*, '("CPUTIME = ",F0.2," mins")') (t1 - t0) / 60
 
     gd = GDALCreate(driver, trim(outfn) // char(0), &
-    &               nox, noy, 3, GDT_FLOAT64, c_null_ptr)
+    &               nox, noy, 5, GDT_FLOAT64, c_null_ptr)
 
     band = GDALGetRasterBand(gd,1)
-    errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, I1)
-    print '("GDALRasterIO_f, errno = ",I0)', errno
-
-    band = GDALGetRasterBand(gd,2)
-    errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, I2)
-    print '("GDALRasterIO_f, errno = ",I0)', errno
-
-    band = GDALGetRasterBand(gd,3)
     errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, hobs)
     print '("GDALRasterIO_f, errno = ",I0)', errno
+
+    do i = 1,4
+      band = GDALGetRasterBand(gd,i + 1)
+      errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, sky(:,:,i))
+      print '("GDALRasterIO_f, errno = ",I0)', errno
+    end do
 
     errno = GDALSetGeoTransform(gd, [gtm % x0, gtm % xi, gtm % xj, &
           & gtm % y0, gtm % yi, gtm % yj])
     print '("GDALSetGeoTransform, errno = ",I0)', errno
     call GDALClose(gd)
 
-    deallocate( I1, I2, hobs )
+    deallocate( sky, hobs )
   end block compute_model
 
   deallocate(mapi, maph)

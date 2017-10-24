@@ -20,14 +20,13 @@ module globals
   real(fp) :: dmax = 200e3
 
   real(fp)           :: model_grid_meters   = 250
-  real(fp)           :: elev_grid_meters    = 125
   real(fp)           :: elev_grid_meters    = 50
 
   integer, parameter :: height_sect_num     = 90
 
   logical :: terrain_attenuation = .true.
-  real(fp)           :: chkray_sect_meters  = 250
   real(fp)           :: chkray_sect_meters  = 100
+  real(fp)           :: chkray_min_dist     = 1500
   integer, parameter :: chkray_sect_num     = 2048
 
 end module

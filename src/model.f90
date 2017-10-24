@@ -44,6 +44,11 @@ contains
 
     adist = angdist(src % lat, src % lng, lat, lng)
 
+    if (adist * radearth < chkray_min_dist) then
+      attn(:) = 1
+      return
+    end if
+
     nn = ceiling(radearth * adist / chkray_sect_meters)
     if (nn > chkray_sect_num) nn = chkray_sect_num
     if (nn < 3) nn = 3
@@ -76,8 +81,8 @@ contains
         end if
 
         calc_hray: do i = 1, nn
-          xr(:) = x1 * (1 - t(i)) * (radearth + src % h ) &
-          &     + x2 * t(i)       * (radearth + hsct(j) )
+          xr(:) = x1 * (1 - t(i)) * (radearth + src % h) &
+          &     + x2 * t(i)       * (radearth + hsct(j))
           h_ray(i) = sqrt(sum(xr**2)) - radearth
         end do calc_hray
 
@@ -129,7 +134,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  pure subroutine onepoint(par, lat, lng, src, maph, gth, I1, I2, hobs)
+  pure subroutine onepoint(par, lat, lng, src, maph, gth, sky, hobs)
     type(modelpar), intent(in) :: par
     ! observer's latitude, longitude and
     real(fp), intent(in) :: lat, lng
@@ -138,7 +143,7 @@ contains
     ! altitude map and geotransform for the map
     real, dimension(:,:), intent(in) :: maph
     type(geotransform), intent(in) :: gth
-    real(fp), intent(out) :: I1, I2, hobs
+    real(fp), intent(out) :: sky(:), hobs
 
     type(modelpar) :: par1
     real(fp) :: tau
@@ -153,8 +158,7 @@ contains
     ! optical depth of the entire atmosphere
     tau = (par % alpha) * (par % relabs) * exp(-hobs / (par % hscale))
     ! background glow diminished by the absorption
-    I1 = (par % skybg) * exp(-tau)
-    I2 = (par % skybg) * exp(-tau)
+    sky(:) = (par % skybg) * exp(-tau)
 
     par1 = par
 
@@ -176,18 +180,22 @@ contains
           & hsct - src(i,j) % h, hobs - src(i,j) % h, &
           & JJ(:,1), JJ(:,2), JJ(:,3))
 
-      JJP(:) = JJ(:,1) * JJ(:,2) * JJ(:,3)
-      I1 = I1 + (src(i,j) % em) * integrate(JJP, hsct)
+      ! najprostszy model: wszystko izotropowe + absorpcja
+      JJP(:) = JJ(:,1) * JJ(:,3)
+      sky(2) = sky(2) + (src(i,j) % em) * integrate(JJP, hsct)
 
-      if ( terrain_attenuation ) then
+      ! dodajemy krzywą światłości i funkcję fazową rozpraszania
+      JJP(:) = JJP * JJ(:,2)
+      sky(3) = sky(3) + (src(i,j) % em) * integrate(JJP, hsct)
+
+      ! dodajemy przesłanianie terenem
+      if ( terrain_attenuation .and. size(sky) .ge. 4 ) then
         call checkray(maph, gth, src(i,j), lat, lng, hsct, JJ(:,4))
         JJP(:) = JJP * JJ(:,4)
-        I2 = I2 + (src(i,j) % em) * integrate(JJP, hsct)
+        sky(4) = sky(4) + (src(i,j) % em) * integrate(JJP, hsct)
       end if
 
     end do
-
-    if (.not. terrain_attenuation) I2 = I1
 
   contains
 
@@ -205,7 +213,7 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  subroutine sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gt)
+  subroutine sbmap(par, mapi, gti, maph, gth, sky, hobs, gt)
     ! model parameters
     type(modelpar), intent(in) :: par
     ! coordinates of the point
@@ -214,7 +222,7 @@ contains
     real(sp), dimension(:,:), intent(in) :: mapi, maph
     type(geotransform), intent(in) :: gti, gth, gt
     ! output
-    real(fp), intent(out), dimension(:,:) :: I1, I2, hobs
+    real(fp), intent(out) :: hobs(:,:), sky(:,:,:)
     ! source map for computation
     type(source), dimension(:,:), allocatable :: src
     integer :: i,j
@@ -222,13 +230,14 @@ contains
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
 
+    write (*,'(2A10,A8,5A8)') 'LAT', 'LNG', 'HOBS', 'SKYBG', &
+    &                        'SKY1', 'SKY2', 'SKY3'
     !$omp parallel do private(j,lat,lng)
-    do i = 1,size(I1,1)
-      do j = 1,size(I1,2)
+    do j = 1,size(sky,2)
+      do i = 1,size(sky,1)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
-        call onepoint(par, lat, lng, src, maph, gth, &
-        &             I1(i,j), I2(i,j), hobs(i,j))
-        write (*,'(I4,1X,I4)')  i, j
+        call onepoint(par, lat, lng, src, maph, gth, sky(i,j,:), hobs(i,j))
+        write (*,'(2F10.4,F8.1,4F8.2)') lat, lng, hobs(i,j), ity2mag(sky(i,j,:))
       end do
     end do
     !$omp end parallel do
@@ -252,7 +261,7 @@ contains
   subroutine sbmap_c(  &
           & mapi, nxi, nyi, gi, &
           & maph, nxh, nyh, gh, &
-          & I1, I2, hobs, nx, ny, g) bind(C)
+          & sky, hobs, nx, ny, g) bind(C)
     use iso_c_binding
     integer(c_int), intent(in), value :: nxi, nyi
     real(c_float), dimension(nxi,nyi), intent(in) :: mapi
@@ -260,12 +269,13 @@ contains
     real(c_float), dimension(nxh,nyh), intent(in) :: maph
     real(c_float), dimension(6), intent(in) :: gi, gh, g
     integer(c_int), intent(in), value :: nx, ny
-    real(c_double), dimension(nx,ny), intent(out) :: I1,I2,hobs
+    real(c_double), dimension(nx,ny,4), intent(out) :: sky
+    real(c_double), dimension(nx,ny), intent(out) :: hobs
     type(modelpar) :: par
     type(geotransform) :: gti, gth, gt
     call gti % import(gi)
     call gth % import(gh)
     call gt % import(g)
-    call sbmap(par, mapi, gti, maph, gth, I1, I2, hobs, gt)
+    call sbmap(par, mapi, gti, maph, gth, sky, hobs, gt)
   end subroutine
 end module
