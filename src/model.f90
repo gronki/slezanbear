@@ -44,7 +44,7 @@ contains
 
     adist = angdist(src % lat, src % lng, lat, lng)
 
-    nn = nint(radearth * adist / chkray_sect_meters)
+    nn = ceiling(radearth * adist / chkray_sect_meters)
     if (nn > chkray_sect_num) nn = chkray_sect_num
     if (nn < 3) nn = 3
 
@@ -54,7 +54,7 @@ contains
       real(fp), dimension(3) :: x1, x2, xi, xw, xr
       integer :: i, j
 
-      forall (i = 1:nn) t(i) = real(i,fp) / nn
+      forall (i = 1:nn) t(i) = real(i,fp) / (nn + 1)
 
       call geo2xyz(src % lat, src % lng, x1(1), x1(2), x1(3))
       call geo2xyz(      lat,       lng, x2(1), x2(2), x2(3))
