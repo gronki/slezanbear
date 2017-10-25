@@ -166,7 +166,7 @@ contains
     par1 = par
 
     do concurrent (i = 1:height_sect_num)
-      hsct(i) = genh(i, height_sect_num, hobs + 10, 7 * par % hscale)
+      hsct(i) = genh(i, height_sect_num, hobs, 7 * par % hscale)
     end do
 
     ! iterate through all map points

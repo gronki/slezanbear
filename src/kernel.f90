@@ -35,9 +35,9 @@ contains
     L = sqrt(H**2 + (1 + H / R) * D**2)
 
     ! emission and scattering angles
-    Q = D**2 / (2*R*H)
-    costh = H / L * (1 + Q)
-    cosg  = H / L * (1 - Q * (1 + H / R))
+    Q = D**2 / (2 * R * L)
+    costh = H / L + Q
+    cosg  = H / L - Q * (1 + H / R)
 
     sct = (par % alpha) / (par % Hscale)
     chi = sct * (par % relabs)
