@@ -5,13 +5,11 @@ module kernel
 
   type modelpar
     real(fp) :: skybg  = 3e-7
-    real(fp) :: alpha  = 0.12
+    real(fp) :: alpha  = 0.2 / 1.086
     real(fp) :: relabs = 0.75
     real(fp) :: hscale = 8000
     real(fp) :: beta   = 0.3
   end type
-
-  real(fp), parameter, private :: magconst = 5.5
 
 contains
 
@@ -104,12 +102,12 @@ contains
 
   elemental real(fp) function ity2mag(ity) result(mag)
     real(fp), intent(in) :: ity
-    mag = magconst - 2.5 * log10(ity)
+    mag = 5.5 - 2.5 * log10(ity)
   end function
 
   elemental real(fp) function mag2ity(mag) result(ity)
     real(fp), intent(in) :: mag
-    ity = 10**((magconst - mag) / 2.5)
+    ity = 10**((5.5 - mag) / 2.5)
   end function
 
 end module
