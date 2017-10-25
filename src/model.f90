@@ -87,9 +87,12 @@ contains
         end do calc_hray
 
         Q(:) = (h_ray - hterr) / (adist * radearth * t)
-        attn(j) = th(minval(Q) / real(0.01,fp) + 0.5)
-      end do along_heights
 
+        attn(j) = minval(Q) / 0.01 + 1
+        if (attn(j) < 0) attn(j) = 0
+        if (attn(j) > 1) attn(j) = 1
+
+      end do along_heights
     end block trace_ray
 
   contains
@@ -203,7 +206,7 @@ contains
       integer, intent(in) :: i,n
       real(fp), intent(in) :: h0, h1
       real(fp) :: t,p
-      real(fp), parameter :: k = 1.5
+      real(fp), parameter :: k = 1.0
       t = real(i - 1, fp) / (n - 1)
       p = 1 - exp(-(h1 - h0) / (k * par % hscale))
       h = h0 - k * (par % hscale) * log(1 - t * p)
@@ -237,7 +240,7 @@ contains
       do i = 1,size(sky,1)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
         call onepoint(par, lat, lng, src, maph, gth, sky(i,j,:), hobs(i,j))
-        write (*,'(2F10.4,F8.1,4F8.2)') lat, lng, hobs(i,j), ity2mag(sky(i,j,:))
+        write (*,'(2F10.4,F8.1,4F8.3)') lat, lng, hobs(i,j), ity2mag(sky(i,j,:))
       end do
     end do
     !$omp end parallel do
