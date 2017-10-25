@@ -165,40 +165,43 @@ contains
 
     par1 = par
 
-    forall (i = 1:height_sect_num)
-      hsct(i) = genh(i, height_sect_num, hobs, 7 * par % hscale)
-    end forall
+    do concurrent (i = 1:height_sect_num)
+      hsct(i) = genh(i, height_sect_num, hobs + 10, 7 * par % hscale)
+    end do
 
     ! iterate through all map points
-    do concurrent (i = 1:size(src,1), j = 1:size(src,2), &
-          & (src(i,j) % em .ne. 0) &
-          & .and. (angdist(lat, lng, src(i,j) % lat, src(i,j) % lng) &
-          &     .le. (dmax / radearth)))
+    iter_src_rows: do j = 1,size(src,2)
+     iter_src_cols: do i = 1,size(src,1)
 
-      par1 % alpha = (par % alpha) * exp(-(src(i,j) % h) / (par % hscale))
+        if (src(i,j) % em .eq. 0) cycle
+        if (angdist(lat, lng, src(i,j) % lat, src(i,j) % lng) &
+        &     .gt. (dmax / radearth)) cycle
 
-      call kern(par1, src(i,j) % area, radearth + src(i,j) % h, &
-          & (radearth + src(i,j) % h) &
-          &   * angdist(lat, lng, src(i,j) % lat, src(i,j) % lng), &
-          & hsct - src(i,j) % h, hobs - src(i,j) % h, &
-          & JJ(:,1), JJ(:,2), JJ(:,3))
+        par1 % alpha = (par % alpha) * exp(-(src(i,j) % h) / (par % hscale))
 
-      ! najprostszy model: wszystko izotropowe + absorpcja
-      JJP(:) = JJ(:,1) * JJ(:,3)
-      sky(2) = sky(2) + (src(i,j) % em) * integrate(JJP, hsct)
+        call kern(par1, src(i,j) % area, radearth + src(i,j) % h, &
+            & (radearth + src(i,j) % h) &
+            &   * angdist(lat, lng, src(i,j) % lat, src(i,j) % lng), &
+            & hsct - src(i,j) % h, hobs - src(i,j) % h, &
+            & JJ(:,1), JJ(:,2), JJ(:,3))
 
-      ! dodajemy krzywą światłości i funkcję fazową rozpraszania
-      JJP(:) = JJP * JJ(:,2)
-      sky(3) = sky(3) + (src(i,j) % em) * integrate(JJP, hsct)
+        ! najprostszy model: wszystko izotropowe + absorpcja
+        JJP(:) = JJ(:,1) * JJ(:,3)
+        sky(2) = sky(2) + (src(i,j) % em) * integrate(JJP, hsct)
 
-      ! dodajemy przesłanianie terenem
-      if ( terrain_attenuation .and. size(sky) .ge. 4 ) then
-        call checkray(maph, gth, src(i,j), lat, lng, hsct, JJ(:,4))
-        JJP(:) = JJP * JJ(:,4)
-        sky(4) = sky(4) + (src(i,j) % em) * integrate(JJP, hsct)
-      end if
+        ! dodajemy krzywą światłości i funkcję fazową rozpraszania
+        JJP(:) = JJP * JJ(:,2)
+        sky(3) = sky(3) + (src(i,j) % em) * integrate(JJP, hsct)
 
-    end do
+        ! dodajemy przesłanianie terenem
+        if ( terrain_attenuation .and. size(sky) .ge. 4 ) then
+          call checkray(maph, gth, src(i,j), lat, lng, hsct, JJ(:,4))
+          JJP(:) = JJP * JJ(:,4)
+          sky(4) = sky(4) + (src(i,j) % em) * integrate(JJP, hsct)
+        end if
+
+      end do iter_src_cols
+    end do iter_src_rows
 
   contains
 
