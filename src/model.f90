@@ -238,7 +238,7 @@ contains
 
     write (*,'(2A10,A8,5A8)') 'LAT', 'LNG', 'HOBS', 'SKYBG', &
     &                        'SKY1', 'SKY2', 'SKY3'
-    !$omp parallel do private(j,lat,lng)
+    !$omp parallel do private(i,j,lat,lng)
     do j = 1,size(sky,2)
       do i = 1,size(sky,1)
         call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
