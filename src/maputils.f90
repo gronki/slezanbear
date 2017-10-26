@@ -54,6 +54,7 @@ contains
 
     !$omp section
     mask(:,:) = angdist(latm, lngm, lat1, lng1) .le. (dmax / radearth)
+    call growmask(mask)
     llims(1,1) = minval(latm, mask)
     ulims(1,1) = maxval(latm, mask)
     llims(1,2) = minval(lngm, mask)
@@ -61,6 +62,7 @@ contains
 
     !$omp section
     mask(:,:) = angdist(latm, lngm, lat1, lng2) .le. (dmax / radearth)
+    call growmask(mask)
     llims(2,1) = minval(latm, mask)
     ulims(2,1) = maxval(latm, mask)
     llims(2,2) = minval(lngm, mask)
@@ -68,6 +70,7 @@ contains
 
     !$omp section
     mask(:,:) = angdist(latm, lngm, lat2, lng2) .le. (dmax / radearth)
+    call growmask(mask)
     llims(3,1) = minval(latm, mask)
     ulims(3,1) = maxval(latm, mask)
     llims(3,2) = minval(lngm, mask)
@@ -75,6 +78,7 @@ contains
 
     !$omp section
     mask(:,:) = angdist(latm, lngm, lat2, lng1) .le. (dmax / radearth)
+    call growmask(mask)
     llims(4,1) = minval(latm, mask)
     ulims(4,1) = maxval(latm, mask)
     llims(4,2) = minval(lngm, mask)
@@ -88,6 +92,24 @@ contains
     ulng = maxval(ulims(:,2))
 
     deallocate( latm, lngm, mask )
+
+  contains
+
+    subroutine growmask(mask)
+      logical, dimension(:,:), intent(inout) :: mask
+      logical, dimension(:,:), allocatable :: mask2
+      integer i, j, li, ui, lj, uj
+      mask2 = mask
+      do j = 1, size(mask,2)
+        do i = 1, size(mask,1)
+          li = max(1,            i - 1)
+          ui = min(size(mask,1), i + 1)
+          lj = max(1,            j - 1)
+          uj = min(size(mask,2), j + 1)
+          mask(i,j) = any(mask2(li:ui, lj:uj))
+        end do
+      end do
+    end subroutine
 
   end subroutine estimate_data_limits
 
@@ -177,6 +199,38 @@ contains
     errno = GDALRasterIO_f(band, GF_READ, offx, offy, map)
     print '("GDALRasterIO_f, errno = ",I0)', errno
     if (errno .ne. 0) error stop "error reading GeoTIFF"
+
+    call GDALClose(gd)
+  end subroutine
+
+  !-----------------------------------------------------------------------------
+
+  subroutine gdal_quicksave_r32(fn, map, gt, errno)
+    use gdal
+    use iso_c_binding, only: c_null_ptr
+    use iso_fortran_env, only: real32, real64
+
+    character(*), intent(in) :: fn
+    real(sp), dimension(:,:), intent(inout) :: map
+    type(geotransform), intent(in) :: gt
+    integer, intent(inout) :: errno
+
+    type(GDALDatasetH) :: gd
+    type(GDALRasterBandH) :: band
+    type(GDALDriverH) :: driver
+
+    driver = GDALGetDriverByName('GTiff' // char(0))
+    gd = GDALCreate(driver, trim(fn) // char(0), &
+    &               size(map,1), size(map,2), 1, GDT_FLOAT32, c_null_ptr)
+    band = GDALGetRasterBand(gd,1)
+
+    try: block
+      errno = GDALRasterIO_f(band, GF_WRITE, 0, 0, map)
+      if (errno .ne. 0) exit try
+      errno = GDALSetGeoTransform(gd, [gt % x0, gt % xi, gt % xj, &
+                                    &  gt % y0, gt % yi, gt % yj])
+      if (errno .ne. 0) exit try
+    end block try
 
     call GDALClose(gd)
   end subroutine

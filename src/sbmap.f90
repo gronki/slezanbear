@@ -63,20 +63,20 @@ program sbmap_p
 
   write (*,'("dem raster size = ",2I6)') size(maph,1), size(maph,2)
 
-  gth % x0 = llngsrc - 0.05
-  gth % xi = (ulngsrc - llngsrc + 0.1) / (size(maph,1) - 1)
+  gth % x0 = llngsrc
+  gth % xi = (ulngsrc - llngsrc) / (size(maph,1) - 1)
   gth % xj = 0
-  gth % y0 = ulatsrc + 0.05
+  gth % y0 = ulatsrc
   gth % yi = 0
-  gth % yj = -(ulatsrc - llatsrc + 0.1) / (size(maph,2) - 1)
+  gth % yj = (llatsrc - ulatsrc) / (size(maph,2) - 1)
 
   loadtiles: block
     integer i
     real(sp), dimension(:,:), allocatable :: maptile
     type(geotransform) :: gttile
     do i = 1,ntiles
-      call gdal_read_section(tiles(i) % fn, llatsrc - 0.05, llngsrc - 0.05, &
-            & ulatsrc + 0.05, ulngsrc + 0.05, maptile, gttile)
+      call gdal_read_section(tiles(i) % fn, llatsrc, llngsrc, &
+            & ulatsrc, ulngsrc, maptile, gttile)
       write (0,'("geotransform trimmed = ",3F15.4)') gttile % x0, gttile % xi, &
        gttile % xj, gttile % y0, gttile % yi, gttile % yj
       call projectmap(maptile, gttile, maph, gth)
@@ -114,7 +114,7 @@ program sbmap_p
 
     write (*, '("CPUTIME = ",F0.2," mins")') (t1 - t0) / 60
 
-    gd = GDALCreate(driver, trim(outfn) // char(0), &
+    gd = GDALCreate(driver, trim(outfn) // ".tif" // char(0), &
     &               nox, noy, 5, GDT_FLOAT64, c_null_ptr)
 
     band = GDALGetRasterBand(gd,1)

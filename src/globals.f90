@@ -9,8 +9,7 @@ module globals
   real(fp), parameter :: pi = 4 * atan(real(1,fp))
   real(fp), parameter :: deg_in_rad = 180 / pi
 
-  character(*), parameter :: outfn = 'model_sil_hires.tif'
-
+  character(*), parameter :: outfn = 'test'
 
   ! real(fp) :: llat = 50.60, llng = 14.80
   ! real(fp) :: ulat = 51.20, ulng = 15.90

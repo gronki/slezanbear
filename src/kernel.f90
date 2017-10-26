@@ -35,7 +35,7 @@ contains
     L = sqrt(H**2 + (1 + H / R) * D**2)
 
     ! emission and scattering angles
-    Q = D**2 / (2 * R * L)
+    Q = merge(D**2 / (2 * R * L), 0.0_fp, L .ne. 0)
     costh = H / L + Q
     cosg  = H / L - Q * (1 + H / R)
 
