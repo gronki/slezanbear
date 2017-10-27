@@ -11,7 +11,7 @@ m2i = lambda m: 10 ** ((5.5 - m) / 2.5)
 colors = [
     (18.000, '#FFFFFF'),
     (19.400, '#D2613D'),
-    (20.000, '#FFDE00'),
+    (20.200, '#FFDE00'),
     (20.800, '#476100'),
     (21.100, '#2E98A6'),
     (21.450, '#0E0036'),
@@ -86,7 +86,6 @@ for fn in argv[1:]:
     fig,ax = plt.subplots(figsize = fs)
     m = ax.contourf(x, y, i2m(sky[2,:,:]), levels = clevels, cmap = cmap)
     # m = ax.imshow(i2m(sky[2,:,:]), cmap = cmap, vmin = 18.0, vmax = 22.0)
-    ax.set_aspect(1 / np.cos(51.0 * np.pi / 180))
     ax.set_aspect('auto')
     plt.colorbar(m, ax = ax)
     plt.savefig(sub(r'\.tif$','.noat.png',fn), dpi = 144)
