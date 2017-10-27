@@ -13,7 +13,7 @@ FFLAGS += -warn all -Winline
 endif
 
 VPATH = src:src/gdal:src/test
-OBJECTS = globals.o geo.o kernel.o model.o maputils.o gdal.o
+OBJECTS = globals.o geo.o kernel.o model.o mapio.o gdal.o
 
 all: libslezanbear.so bin/sbmap testbin/testr testbin/testw
 

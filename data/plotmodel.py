@@ -54,10 +54,11 @@ for fn in argv[1:]:
     hobs = arr[0,:,:]
     sky = arr[1:,:,:]
 
-    fs = ( 10 * np.sqrt(nx/float(ny)), 10 / np.sqrt(nx/float(ny)) )
+    fs = ( 13 * np.sqrt(nx/float(ny)), 12 / np.sqrt(nx/float(ny)) )
 
     ex = [ gt[0], gt[0] + nx * gt[1],
            gt[3] + ny * gt[5], gt[3] ]
+    aspect = 1 / np.cos((gt[3] + (ny - 1) / 2 * gt[5]) * np.pi / 180)
 
 
     x = np.linspace(gt[0], gt[0] + nx * gt[1], nx)
@@ -66,8 +67,8 @@ for fn in argv[1:]:
     #---------------------------------------------------------------------------
 
     fig,ax = plt.subplots(figsize = fs)
-    m = ax.imshow(hobs, cmap = 'BrBG_r')
-    ax.set_aspect('auto')
+    m = ax.imshow(hobs, extent = ex, cmap = 'BrBG_r', vmin = 0, vmax = 1000)
+    ax.set_aspect(aspect)
 
     plt.colorbar(m, ax = ax)
     plt.savefig(sub(r'\.tif$','.el.png',fn), dpi = 144, interpolation = 'none')
@@ -77,7 +78,7 @@ for fn in argv[1:]:
     fig,ax = plt.subplots(figsize = fs)
     m = ax.contourf(x, y, i2m(sky[3,:,:]), levels = clevels, cmap = cmap)
     plt.colorbar(m, ax = ax)
-    ax.set_aspect('auto')
+    ax.set_aspect(aspect)
 
     plt.savefig(sub(r'\.tif$','.png',fn), dpi = 144)
 
@@ -86,22 +87,26 @@ for fn in argv[1:]:
     fig,ax = plt.subplots(figsize = fs)
     m = ax.contourf(x, y, i2m(sky[2,:,:]), levels = clevels, cmap = cmap)
     # m = ax.imshow(i2m(sky[2,:,:]), cmap = cmap, vmin = 18.0, vmax = 22.0)
-    ax.set_aspect('auto')
+    ax.set_aspect(aspect)
     plt.colorbar(m, ax = ax)
     plt.savefig(sub(r'\.tif$','.noat.png',fn), dpi = 144)
 
     #---------------------------------------------------------------------------
 
     fig,ax = plt.subplots(figsize = fs)
-    m = ax.imshow(-2.5 * np.log10(sky[3,:,:] / sky[2,:,:]), cmap = 'inferno_r',  vmin = 0.0, vmax = 0.1, interpolation = 'none')
-    ax.set_aspect('auto')
+    m = ax.imshow(-2.5 * np.log10(sky[3,:,:] / sky[2,:,:]),
+            cmap =  'inferno_r',  vmin = 0.0, vmax = 0.1,
+            interpolation = 'none', extent = ex)
+    ax.set_aspect(aspect)
     plt.colorbar(m, ax = ax)
     plt.savefig(sub(r'\.tif$','.atdiff.png',fn), dpi = 144)
 
     #---------------------------------------------------------------------------
 
     fig,ax = plt.subplots(figsize = fs)
-    m = ax.imshow(-2.5 * np.log10(sky[2,:,:] / sky[1,:,:]), cmap = 'RdGy',  vmin = -0.1, vmax = 0.1, interpolation = 'none')
-    ax.set_aspect('auto')
+    m = ax.imshow(-2.5 * np.log10(sky[2,:,:] / sky[1,:,:]),
+        cmap = 'RdGy', vmin = -0.1, vmax = 0.1, interpolation = 'none',
+        extent = ex)
+    ax.set_aspect(aspect)
     plt.colorbar(m, ax = ax)
     plt.savefig(sub(r'\.tif$','.phdiff.png',fn), dpi = 144)
