@@ -5,10 +5,10 @@ module kernel
 
   type modelpar
     real(fp) :: skybg  = 3e-7
-    real(fp) :: alpha  = 0.2 / 1.086
+    real(fp) :: alpha  = 0.02
     real(fp) :: relabs = 0.75
     real(fp) :: hscale = 8000
-    real(fp) :: beta   = 0.3
+    real(fp) :: beta   = 0.20
   end type
 
 contains

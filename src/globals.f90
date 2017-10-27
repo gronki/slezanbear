@@ -9,21 +9,32 @@ module globals
   real(fp), parameter :: pi = 4 * atan(real(1,fp))
   real(fp), parameter :: deg_in_rad = 180 / pi
 
-  character(*), parameter :: outfn = 'test'
+  character(*), parameter :: outfn = 'lowersilesia'
 
-  ! real(fp) :: llat = 50.60, llng = 14.80
+  ! Wroclaw
+  ! real(fp) :: llat = 50.80, llng = 16.55
+  ! real(fp) :: ulat = 51.40, ulng = 17.40
+
+  ! Izery
+  ! real(fp) :: llat = 50.60, llng = 14.75
   ! real(fp) :: ulat = 51.20, ulng = 15.90
-  real(fp) :: llat = 50.50, llng = 14.80
-  real(fp) :: ulat = 51.50, ulng = 17.70
 
-  real(fp) :: dmax = 200e3
+  ! Wroclaw center
+  ! real(fp) :: llat = 51.00, llng = 16.87
+  ! real(fp) :: ulat = 51.15, ulng = 17.09
 
-  real(fp)           :: model_grid_meters   = 250
+  ! Lower Silesia
+  real(fp) :: llat = 50.40, llng = 14.70
+  real(fp) :: ulat = 51.60, ulng = 17.85
+
+  real(fp) :: dmax = 180e3
+
+  real(fp)           :: model_grid_meters   = 1000
   real(fp)           :: elev_grid_meters    = 50
 
-  integer, parameter :: height_sect_num     = 90
+  integer, parameter :: height_sect_num     = 96
 
-  logical :: terrain_attenuation = .true.
+  logical :: terrain_attenuation = .false.
   real(fp)           :: chkray_sect_meters  = 100
   real(fp)           :: chkray_min_dist     = 1500
   integer, parameter :: chkray_sect_num     = 2048
