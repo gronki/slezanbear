@@ -203,6 +203,8 @@ contains
       end do iter_src_cols
     end do iter_src_rows
 
+    if (.not. terrain_attenuation) sky(4) = sky(3)
+
   contains
 
     elemental real(fp) function genh(i, n, h0, h1) result(h)
