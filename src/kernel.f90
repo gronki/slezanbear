@@ -29,7 +29,7 @@ contains
     type(modelpar), intent(in) :: par
     real(fp), intent(in) :: A0, R, D, H, Hobs
     real(fp), intent(out) :: J1, J2, J3
-    real(fp) :: L, Q, costh, cosg, tau1, tau2, sct, chi
+    real(fp) :: L, Q, costh, cosg, tau1, tau2, sct, chi, omega
 
     ! distance from the source to the scattering point
     L = sqrt(H**2 + (1 + H / R) * D**2)
@@ -46,7 +46,8 @@ contains
     tau2 = chi * (par % Hscale) * exp(-Hobs / (par % Hscale)) &
          &     * (1 - exp(-(H - Hobs) / (par % Hscale)))
 
-    J1 = sct * exp(-H / (par % Hscale)) * (A0 / 2) / (2 * pi * L**2 + A0)
+    omega = cosg * merge(1, 0, cosg > 0) * 2 * pi * A0 / (2 * pi * L**2 + A0)
+    J1 = sct * exp(-H / (par % Hscale)) * omega / (4 * pi)
     J2 = E(cosg) * g(costh)
     J3 = exp(-tau1) * exp(-tau2)
 
@@ -63,37 +64,47 @@ contains
 
     elemental real(fp) function g(costh)
       real(fp), intent(in) :: costh
-      g = 0.75_fp * (1 + costh**2)
+      g = 3 * (1 + costh**2) / 4
     end function
 
     elemental real(fp) function E0(cosg) result(E)
       real(fp), intent(in) :: cosg
-      E = merge(1, 0, cosg > 0)
+      E = 1.5
     end function
 
     elemental real(fp) function E1(cosg) result(E)
       real(fp), intent(in) :: cosg
-      E = 1.5 * cosg * merge(1, 0, cosg > 0)
+      E = 6 * (1 - cosg)
     end function
 
     elemental real(fp) function E2(cosg) result(E)
       real(fp), intent(in) :: cosg
-      E = 6 * cosg * (1 - cosg) * merge(1, 0, cosg > 0)
+      E = 15  * (1 - cosg)**2
     end function
 
     elemental real(fp) function E3(cosg) result(E)
       real(fp), intent(in) :: cosg
-      E = 15  * cosg * (1 - cosg)**2 * merge(1, 0, cosg > 0)
+      E = 30  * (1 - cosg)**3
     end function
 
     elemental real(fp) function E4(cosg) result(E)
       real(fp), intent(in) :: cosg
-      E = 30  * cosg * (1 - cosg)**3 * merge(1, 0, cosg > 0)
+      E = 52.5_fp * (1 - cosg)**4
+    end function
+
+    elemental real(fp) function E5(cosg) result(E)
+      real(fp), intent(in) :: cosg
+      E = 84 * (1 - cosg)**5
+    end function
+
+    elemental real(fp) function E6(cosg) result(E)
+      real(fp), intent(in) :: cosg
+      E = 126 * (1 - cosg)**6
     end function
 
     elemental real(fp) function E(cosg)
       real(fp), intent(in) :: cosg
-      E = E0(cosg) * (1 - par % beta) + E4(cosg) * (par % beta)
+      E = E0(cosg) * (1 - par % beta) + E3(cosg) * (par % beta)
     end function
 
   end subroutine
