@@ -1,4 +1,4 @@
-program sbcalib
+program sbcalibrand
 
   use globals
   use gdal
@@ -15,7 +15,7 @@ program sbcalib
   end type
 
   real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
-  type(modelpar), dimension(:), allocatable :: par
+  type(modelpar) :: par
   type(dataentry), dimension(100) :: dat
   integer :: ndata, i, j
 
@@ -77,78 +77,70 @@ program sbcalib
     call map_read_tiles(fndem, maph, gth)
   end block read_dem
 
-  call initpar(par)
+  call random_seed()
 
   printcalib: block
     type(source), dimension(:,:), allocatable :: src
+    real :: a(5)
+    real(fp) :: err(100), erra, errb
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
 
     open(34, file = 'calib.txt', action = 'write')
-    write (34,'(2A7,A8,A6,A6,A10)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', 'BG', 'DEV'
+    write (34,'(A8,A7,A8,A6,A7,3A9)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', 'BG', &
+    & 'DEV', 'D(22)', 'D(18)'
 
-    iterate_parameters: do j = 1, size(par)
+    iterate_parameters: do j = 1, 16000
+      call random_number(a)
+
+      par % alpha =  M(a(1), 4.0, 9.0) * 1e-6
+      par % relabs = M(a(2), 0.00, 12.00)
+      par % hscale = M(a(3), 1.00, 10.0) * 1e3
+      par % beta =   M(a(4), 0.0, 0.4)
+      par % skybg =  M(a(5), 2.4, 3.7) * 1e-7
+
       !$omp parallel do private(sky,hobs)
       iterate_datpoints: do i = 1, ndata
-        call onepoint(par(j), dat(i) % lat, dat(i) % lng, &
+        call onepoint(par, dat(i) % lat, dat(i) % lng, &
         &       src, maph, gth, sky, hobs)
         dat(i) % model = ity2mag(sky(4))
       end do iterate_datpoints
       !$omp end parallel do
 
-      write (34,'(2F7.3,F8.1,F6.3,F6.2,F10.3)') &
-        & par(j) % alpha, par(j) % relabs, &
-        & par(j) % hscale, par(j) % beta, ity2mag(par(j) % skybg), &
-        & sum((dat(1:ndata) % sky - dat(1:ndata) % model)**2)
+      err(1:ndata) = dat(1:ndata) % model - dat(1:ndata) % sky
+      call regr(dat(1:ndata) % sky, err(1:ndata), erra, errb)
+
+      write (34,'(F8.3,F7.3,F8.1,F6.3,F7.3,3F9.4)') &
+        & par % alpha * 1e6, par % relabs, &
+        & par % hscale, par % beta, (par % skybg) * 1e7, &
+        & sqrt(sum(err(1:ndata)**2) / ndata), &
+        & errb + erra * 22, errb + erra * 18
       flush(34)
-        
     end do iterate_parameters
 
     close(34)
 
     deallocate(src)
   end block printcalib
-  !
-  ! do i = 1, ndata
-  !   write (*,datafmt) dat(i) % lat, dat(i) % lng, &
-  !     & dat(i) % sky, dat(i) % err, ity2mag(dat(i) % model)
-  ! end do
 
-  deallocate(mapi, maph, par)
+  deallocate(mapi, maph)
 
 contains
 
-  subroutine initpar(par)
-    type(modelpar), dimension(:), intent(inout), allocatable :: par
+  elemental real function m(a, l, u) result(b)
+    real, intent(in) :: a
+    real, intent(in) :: l, u
+    b = l + a * (u - l)
+  end function
 
-    integer :: i1,i2,i3,i4,i5,i
-    real(fp), dimension(*), parameter :: par_alpha = [0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040]
-    real(fp), dimension(*), parameter :: par_beta = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
-    real(fp), dimension(*), parameter :: par_skybg = [2.5e-7, 3e-7, 2e-7, 3.6e-7]
-    real(fp), dimension(*), parameter :: par_hscale = [8000, 6000, 10000, 4000, 2000]
-    real(fp), dimension(*), parameter :: par_relabs = [0.0, 0.4, 0.7, 1.0, 2.0, 4.0, 8.0, 12.0]
+  subroutine regr(x, y, a, b)
+    real(fp), dimension(:), intent(in) :: x, y
+    real(fp) :: a, b, mx, my
+    mx = sum(x) / size(x)
+    my = sum(y) / size(y)
+    a = sum((x - mx) * (y - my)) / sum((x - mx)**2)
+    b = my - a * mx
+  end subroutine
 
-    allocate(par(size(par_alpha) * size(par_beta) * size(par_skybg) &
-      & * size(par_hscale) * size(par_relabs)))
-
-    i = 1
-    do i3 = 1,size(par_skybg)
-      do i2 = 1,size(par_beta)
-        do i4 = 1,size(par_hscale)
-          do i5 = 1,size(par_relabs)
-            do i1 = 1,size(par_alpha)
-              par(i) % alpha = par_alpha(i1)
-              par(i) % beta = par_beta(i2)
-              par(i) % skybg = par_skybg(i3)
-              par(i) % hscale = par_hscale(i4)
-              par(i) % relabs = par_relabs(i5)
-              i = i + 1
-            end do
-          end do
-        end do
-      end do
-    end do
-  end subroutine initpar
-
-end program sbcalib
+end program sbcalibrand

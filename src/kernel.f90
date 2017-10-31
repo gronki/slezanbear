@@ -4,11 +4,11 @@ module kernel
   implicit none
 
   type modelpar
-    real(fp) :: skybg  = 3e-7
-    real(fp) :: alpha  = 0.02
-    real(fp) :: relabs = 0.75
-    real(fp) :: hscale = 8000
-    real(fp) :: beta   = 0.20
+    real(fp) :: skybg  = 2.5e-7
+    real(fp) :: alpha  = 6.2e-6
+    real(fp) :: relabs = 1.00
+    real(fp) :: hscale = 6000
+    real(fp) :: beta   = 0.10
   end type
 
 contains
@@ -29,7 +29,7 @@ contains
     type(modelpar), intent(in) :: par
     real(fp), intent(in) :: A0, R, D, H, Hobs
     real(fp), intent(out) :: J1, J2, J3
-    real(fp) :: L, Q, costh, cosg, tau1, tau2, sct, chi, omega
+    real(fp) :: L, Q, costh, cosg, tau1, tau2, chi, omega
 
     ! distance from the source to the scattering point
     L = sqrt(H**2 + (1 + H / R) * D**2)
@@ -39,15 +39,14 @@ contains
     costh = H / L + Q
     cosg  = H / L - Q * (1 + H / R)
 
-    sct = (par % alpha) / (par % Hscale)
-    chi = sct * (par % relabs)
+    chi = (par % alpha) * (par % relabs)
 
     tau1 = chi * L * FF(-H / (par % Hscale))
     tau2 = chi * (par % Hscale) * exp(-Hobs / (par % Hscale)) &
          &     * (1 - exp(-(H - Hobs) / (par % Hscale)))
 
     omega = cosg * merge(1, 0, cosg > 0) * 2 * pi * A0 / (2 * pi * L**2 + A0)
-    J1 = sct * exp(-H / (par % Hscale)) * omega / (4 * pi)
+    J1 = (par % alpha) * exp(-H / (par % Hscale)) * omega / (4 * pi)
     J2 = E(cosg) * g(costh)
     J3 = exp(-tau1) * exp(-tau2)
 
@@ -102,9 +101,14 @@ contains
       E = 126 * (1 - cosg)**6
     end function
 
+    elemental real(fp) function E7(cosg) result(E)
+      real(fp), intent(in) :: cosg
+      E = 180 * (1 - cosg)**7
+    end function
+
     elemental real(fp) function E(cosg)
       real(fp), intent(in) :: cosg
-      E = E0(cosg) * (1 - par % beta) + E3(cosg) * (par % beta)
+      E = E0(cosg) * (1 - par % beta) + E4(cosg) * (par % beta)
     end function
 
   end subroutine

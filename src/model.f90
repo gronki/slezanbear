@@ -159,7 +159,8 @@ contains
     call interpolmap(maph, gth, lat, lng, hobs)
 
     ! optical depth of the entire atmosphere
-    tau = (par % alpha) * (par % relabs) * exp(-hobs / (par % hscale))
+    tau = (par % alpha) * (par % relabs) * (par % hscale) &
+    &                        * exp(-hobs / (par % hscale))
     ! background glow diminished by the absorption
     sky(:) = (par % skybg) * exp(-tau)
 
