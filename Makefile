@@ -15,7 +15,8 @@ endif
 VPATH = src:src/gdal:src/test
 OBJECTS = globals.o geo.o kernel.o model.o mapio.o gdal.o
 
-all: libslezanbear.so bin/sbmap bin/sbcalib bin/sbcalibrand testbin/testr testbin/testw
+all: libslezanbear.so bin/sbmap bin/sbcalib bin/sbcalibrand bin/sbverify \
+	 testbin/testr testbin/testw
 
 include deps.inc
 
