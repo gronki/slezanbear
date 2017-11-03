@@ -4,11 +4,11 @@ module kernel
   implicit none
 
   type modelpar
-    real(fp) :: skybg  = 2.5e-7
-    real(fp) :: alpha  = 6.2e-6
-    real(fp) :: relabs = 1.00
-    real(fp) :: hscale = 6000
-    real(fp) :: beta   = 0.10
+    real(fp) :: alpha  = 5e-6
+    real(fp) :: relabs = 8.0
+    real(fp) :: hscale = 8000
+    real(fp) :: beta   = 0.1
+    real(fp) :: skybg  = 3e-7
   end type
 
 contains
