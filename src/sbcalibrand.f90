@@ -89,16 +89,18 @@ program sbcalibrand
 
     open(34, file = 'calib.txt', action = 'write')
     write (34,'(A8,A7,A8,A6,A7,3A9)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', 'BG', &
-    & 'DEV', 'D(22)', 'D(18)'
+    & 'DEV', 'D(21.5)', 'D(18.5)'
 
     iterate_parameters: do j = 1, 16000
       call random_number(a)
 
-      par % alpha =  M(a(1), 4.0, 9.0) * 1e-6
-      par % relabs = M(a(2), 0.00, 12.00)
-      par % hscale = M(a(3), 1.00, 10.0) * 1e3
-      par % beta =   M(a(4), 0.0, 0.4)
-      par % skybg =  M(a(5), 2.4, 3.7) * 1e-7
+      par % alpha =  M(a(1), 1.0, 10.0) * 1e-6
+      par % relabs = M(a(2), 0.00, 24.00)
+      par % hscale = M(a(3), 0.50, 18.0) * 1e3
+      par % beta =   M(a(4), 0.0, 0.8)
+      par % skybg =  M(a(5), 2.8, 4.0) * 1e-7
+
+      par % alpha = (par % alpha) / (par % hscale / 8500)**0.333
 
       !$omp parallel do private(sky,hobs)
       iterate_datpoints: do i = 1, ndata
@@ -115,7 +117,7 @@ program sbcalibrand
         & par % alpha * 1e6, par % relabs, &
         & par % hscale, par % beta, (par % skybg) * 1e7, &
         & sqrt(sum(err(1:ndata)**2) / ndata), &
-        & errb + erra * 22, errb + erra * 18
+        & errb + erra * 21.5, errb + erra * 18.5
       flush(34)
     end do iterate_parameters
 
@@ -133,14 +135,5 @@ contains
     real, intent(in) :: l, u
     b = l + a * (u - l)
   end function
-
-  subroutine regr(x, y, a, b)
-    real(fp), dimension(:), intent(in) :: x, y
-    real(fp) :: a, b, mx, my
-    mx = sum(x) / size(x)
-    my = sum(y) / size(y)
-    a = sum((x - mx) * (y - my)) / sum((x - mx)**2)
-    b = my - a * mx
-  end subroutine
 
 end program sbcalibrand

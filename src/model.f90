@@ -29,6 +29,17 @@ contains
 
   !-----------------------------------------------------------------------------
 
+  subroutine regr(x, y, a, b)
+    real(fp), dimension(:), intent(in) :: x, y
+    real(fp) :: a, b, mx, my
+    mx = sum(x) / size(x)
+    my = sum(y) / size(y)
+    a = sum((x - mx) * (y - my)) / sum((x - mx)**2)
+    b = my - a * mx
+  end subroutine
+
+  !-----------------------------------------------------------------------------
+
   pure subroutine checkray(maph, gth, src, lat, lng, hsct, attn)
     ! altitude map and geotransform
     real, dimension(:,:), intent(in) :: maph
