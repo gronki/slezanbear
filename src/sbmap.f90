@@ -68,6 +68,12 @@ program sbmap_p
     allocate( sky(nox,noy,4), hobs(nox,noy) )
     write (*,'("model raster size = ",2I6)') nox, noy
 
+    par % alpha = 5.678e-6
+    par % relabs = 9.072
+    par % hscale = 7026
+    par % beta = 0.112
+    par % skybg = 3.56e-7
+
     call cpu_time(t0)
     call sbmap(par, mapi, gti, maph, gth, sky, hobs, gtm)
     call cpu_time(t1)
