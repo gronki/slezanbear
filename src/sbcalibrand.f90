@@ -9,12 +9,12 @@ program sbcalibrand
   implicit none
 
   type dataentry
-    real(fp) :: lat, lng
-    real(fp) :: sky, err
-    real(fp) :: model
+    real(dp) :: lat, lng
+    real(dp) :: sky, err
+    real(dp) :: model
   end type
 
-  real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
+  real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(modelpar) :: par
   type(dataentry), dimension(100) :: dat
   integer :: ndata, i, j
@@ -24,7 +24,7 @@ program sbcalibrand
   real(sp), dimension(:,:), allocatable :: mapi, maph
   type(geotransform) :: gti, gth
   integer :: errno
-  real(fp) :: sky(4), hobs
+  real(dp) :: sky(4), hobs
 
   character(*), parameter :: fni = 'SVDNB_npp_20150101-20151231_75N060W_vcm-orm-ntl_v10_c201701311200.avg_rade9.tif'
   character(*), parameter :: datafmt = '(F9.4,1X,F9.4,3X,F5.2,1X,F4.2,3X,F5.2)'
@@ -82,7 +82,7 @@ program sbcalibrand
   printcalib: block
     type(source), dimension(:,:), allocatable :: src
     real :: a(5)
-    real(fp) :: err(100), erra, errb
+    real(dp) :: err(100), erra, errb
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)

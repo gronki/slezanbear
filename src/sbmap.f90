@@ -8,7 +8,7 @@ program sbmap_p
 
   implicit none
 
-  real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
+  real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(modelpar) :: par
 
   character(128), dimension(9) :: fndem
@@ -59,10 +59,10 @@ program sbmap_p
 
     integer :: errno
     type(geotransform) :: gtm
-    real(fp), dimension(:,:), allocatable :: hobs
-    real(fp), dimension(:,:,:), allocatable :: sky
+    real(dp), dimension(:,:), allocatable :: hobs
+    real(dp), dimension(:,:,:), allocatable :: sky
     integer nox,noy,i
-    real(fp) :: t0,t1
+    real(dp) :: t0,t1
 
     call map_gen_size(llat, llng, ulat, ulng, model_grid_meters, nox, noy, gtm)
     allocate( sky(nox,noy,4), hobs(nox,noy) )

@@ -12,17 +12,17 @@ module slezanbear
   end type lpmap
 
   type source
-    real(fp) :: lat, lng
-    real(fp) :: h, area
-    real(fp) :: em
+    real(dp) :: lat, lng
+    real(dp) :: h, area
+    real(dp) :: em
   end type source
 
 contains
 
   !-----------------------------------------------------------------------------
 
-  pure real(fp) function integrate(y, x) result(integral)
-    real(fp), intent(in), dimension(:) :: x, y
+  pure real(dp) function integrate(y, x) result(integral)
+    real(dp), intent(in), dimension(:) :: x, y
     integral = sum((y(2:size(y)) + y(1:size(y)-1)) &
               &  * (x(2:size(x)) - x(1:size(x)-1))) / 2
   end function
@@ -30,8 +30,8 @@ contains
   !-----------------------------------------------------------------------------
 
   subroutine regr(x, y, a, b)
-    real(fp), dimension(:), intent(in) :: x, y
-    real(fp) :: a, b, mx, my
+    real(dp), dimension(:), intent(in) :: x, y
+    real(dp) :: a, b, mx, my
     mx = sum(x) / size(x)
     my = sum(y) / size(y)
     a = sum((x - mx) * (y - my)) / sum((x - mx)**2)
@@ -46,12 +46,12 @@ contains
     type(geotransform), intent(in) :: gth
     ! two points and their relative heights (h / R)
     type(source), intent(in) :: src
-    real(fp), intent(in) :: lat, lng, hsct(:)
+    real(dp), intent(in) :: lat, lng, hsct(:)
     ! result: attenuation factor due to terrain (0 - obstruction, 1 - no obst)
-    real(fp), intent(out) :: attn(:)
+    real(dp), intent(out) :: attn(:)
     ! internal variables
     integer :: nn
-    real(fp) :: adist
+    real(dp) :: adist
 
     adist = angdist(src % lat, src % lng, lat, lng)
 
@@ -66,11 +66,11 @@ contains
 
     trace_ray: block
 
-      real(fp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr, Q
-      real(fp), dimension(3) :: x1, x2, xi, xw, xr
+      real(dp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr, Q
+      real(dp), dimension(3) :: x1, x2, xi, xw, xr
       integer :: i, j
 
-      forall (i = 1:nn) t(i) = f(real(i,fp) / (nn + 1), 2.0_fp)
+      forall (i = 1:nn) t(i) = f(real(i,dp) / (nn + 1), 2.0_dp)
 
       call geo2xyz(src % lat, src % lng, x1(1), x1(2), x1(3))
       call geo2xyz(      lat,       lng, x2(1), x2(2), x2(3))
@@ -109,15 +109,15 @@ contains
   contains
 
     pure subroutine cross(x,y,z)
-      real(fp), dimension(3), intent(in) :: x,y
-      real(fp), dimension(3), intent(out) :: z
+      real(dp), dimension(3), intent(in) :: x,y
+      real(dp), dimension(3), intent(out) :: z
       z(1) =   x(2)*y(3) - x(3)*y(2)
       z(2) = - x(1)*y(3) + x(3)*y(1)
       z(3) =   x(1)*y(2) - x(2)*y(1)
     end subroutine
 
-    elemental real(fp) function f(t, k)
-      real(fp), intent(in) :: t, k
+    elemental real(dp) function f(t, k)
+      real(dp), intent(in) :: t, k
       f = 2 * t + (k - 1) * t**2
       f = f / (k + 1)
     end function
@@ -135,7 +135,7 @@ contains
     integer i,j
     ! interpolate altitude for all source points and compute their coordinates
     do concurrent (i = 1:size(mapi,1), j = 1:size(mapi,2))
-      call arr2geo(gti, real(i,fp), real(j,fp), src(i,j) % lat, src(i,j) % lng)
+      call arr2geo(gti, real(i,dp), real(j,dp), src(i,j) % lat, src(i,j) % lng)
 
       src(i,j) % area = abs(gti % det()) * (radearth / deg_in_rad)**2 &
             & * cos((src(i,j) % lat) / deg_in_rad)
@@ -151,20 +151,20 @@ contains
   pure subroutine onepoint(par, lat, lng, src, maph, gth, sky, hobs)
     type(modelpar), intent(in) :: par
     ! observer's latitude, longitude and
-    real(fp), intent(in) :: lat, lng
+    real(dp), intent(in) :: lat, lng
     ! source map
     type(source), dimension(:,:), intent(in) :: src
     ! altitude map and geotransform for the map
     real, dimension(:,:), intent(in) :: maph
     type(geotransform), intent(in) :: gth
-    real(fp), intent(out) :: sky(:), hobs
+    real(dp), intent(out) :: sky(:), hobs
 
     type(modelpar) :: par1
-    real(fp) :: tau
+    real(dp) :: tau
 
     integer i, j, k
-    real(fp) :: JJP(height_sect_num)
-    real(fp) :: hsct(height_sect_num), JJ(height_sect_num,4)
+    real(dp) :: JJP(height_sect_num)
+    real(dp) :: hsct(height_sect_num), JJ(height_sect_num,4)
 
     ! get the altitude of the observer (in meters)
     call interpolmap(maph, gth, lat, lng, hobs)
@@ -219,12 +219,12 @@ contains
 
   contains
 
-    elemental real(fp) function genh(i, n, h0, h1) result(h)
+    elemental real(dp) function genh(i, n, h0, h1) result(h)
       integer, intent(in) :: i,n
-      real(fp), intent(in) :: h0, h1
-      real(fp) :: t,p
-      real(fp), parameter :: k = 1.0
-      t = real(i - 1, fp) / (n - 1)
+      real(dp), intent(in) :: h0, h1
+      real(dp) :: t,p
+      real(dp), parameter :: k = 1.0
+      t = real(i - 1, dp) / (n - 1)
       p = 1 - exp(-(h1 - h0) / (k * par % hscale))
       h = h0 - k * (par % hscale) * log(1 - t * p)
     end function
@@ -237,12 +237,12 @@ contains
     ! model parameters
     type(modelpar), intent(in) :: par
     ! coordinates of the point
-    real(fp) :: lat, lng
+    real(dp) :: lat, lng
     ! altitude and flux maps and respective geotransforms
     real(sp), dimension(:,:), intent(in) :: mapi, maph
     type(geotransform), intent(in) :: gti, gth, gt
     ! output
-    real(fp), intent(out) :: hobs(:,:), sky(:,:,:)
+    real(dp), intent(out) :: hobs(:,:), sky(:,:,:)
     ! source map for computation
     type(source), dimension(:,:), allocatable :: src
     integer :: i,j
@@ -255,7 +255,7 @@ contains
     !$omp parallel do private(i,j,lat,lng)
     do j = 1,size(sky,2)
       do i = 1,size(sky,1)
-        call arr2geo(gt, real(i,fp), real(j,fp), lat, lng)
+        call arr2geo(gt, real(i,dp), real(j,dp), lat, lng)
         call onepoint(par, lat, lng, src, maph, gth, sky(i,j,:), hobs(i,j))
         write (*,'(2F10.4,F8.1,4F8.3)') lat, lng, hobs(i,j), ity2mag(sky(i,j,:))
       end do

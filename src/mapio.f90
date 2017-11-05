@@ -13,7 +13,7 @@ contains
     use geo, only: geotransform, geo2arr, gtinit, arr2geo
 
     character(*), intent(in) :: fn
-    real(fp), intent(in) :: llat, llng, ulat, ulng
+    real(dp), intent(in) :: llat, llng, ulat, ulng
     type(geotransform), intent(out) :: gt
     real(sp), intent(out), allocatable, dimension(:,:) :: map
     type(GDALDatasetH) :: gd
@@ -82,8 +82,8 @@ contains
 
     if (offx .ne. 0 .or. offy .ne. 0) then
       correct_geotransform: block
-        real(fp) :: x0, y0
-        call arr2geo(gt, real(offx + 1,fp), real(offy + 1,fp), y0, x0)
+        real(dp) :: x0, y0
+        call arr2geo(gt, real(offx + 1,dp), real(offy + 1,dp), y0, x0)
         gt % x0 = x0
         gt % y0 = y0
       end block correct_geotransform
@@ -149,12 +149,12 @@ contains
     type(geotransform) :: gt
 
     integer :: errno, i
-    real(fp) o1,o2
-    real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
-    real(fp) :: llattil, llngtil, ulattil, ulngtil
+    real(dp) o1,o2
+    real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
+    real(dp) :: llattil, llngtil, ulattil, ulngtil
     real(sp), dimension(:,:), allocatable :: maptile
     type(geotransform) :: gttile
-    real(fp) :: g(6)
+    real(dp) :: g(6)
 
     call map_limits(size(map,1), size(map,2), gt, &
     &               llatsrc, llngsrc, ulatsrc, ulngsrc)
@@ -188,10 +188,10 @@ contains
 
   contains
 
-    elemental real(fp) function overlap(x1l,x1u,x2l,x2u)
-      real(fp), intent(in) :: x1l, x1u
-      real(fp), intent(in) :: x2l, x2u
-      real(fp) :: c1, r1, c2, r2
+    elemental real(dp) function overlap(x1l,x1u,x2l,x2u)
+      real(dp), intent(in) :: x1l, x1u
+      real(dp), intent(in) :: x2l, x2u
+      real(dp) :: c1, r1, c2, r2
       c1 =    (x1l + x1u) / 2
       r1 = abs(x1u - x1l) / 2
       c2 =    (x2l + x2u) / 2

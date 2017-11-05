@@ -9,11 +9,11 @@ program sbverify
   implicit none
 
   type dataentry
-    real(fp) :: lat, lng
-    real(fp) :: sky
+    real(dp) :: lat, lng
+    real(dp) :: sky
   end type
 
-  real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
+  real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(source), dimension(:,:), allocatable :: src
 
   type(dataentry), dimension(1024), target :: dat_all
@@ -25,13 +25,13 @@ program sbverify
   character(128), dimension(9) :: fndem
 
   integer, parameter :: npar = 5
-  real(fp), dimension(npar), parameter :: parlo &
+  real(dp), dimension(npar), parameter :: parlo &
   &   = [ 1e-6,  0.0, 0.5e3, 0.0, 2.8e-7]
-  real(fp), dimension(npar), parameter :: parhi &
+  real(dp), dimension(npar), parameter :: parhi &
   &   = [10e-6, 24.0,  18e3, 0.8, 4.0e-7]
-  real(fp), dimension(npar, npar + 1) :: par
-  real(fp), dimension(npar + 1) :: modelerr
-  real(fp), dimension(:,:), allocatable :: modelsky
+  real(dp), dimension(npar, npar + 1) :: par
+  real(dp), dimension(npar + 1) :: modelerr
+  real(dp), dimension(:,:), allocatable :: modelsky
 
   real(sp), dimension(:,:), allocatable :: mapi, maph
   type(geotransform) :: gti, gth
@@ -98,7 +98,7 @@ program sbverify
   allocate(modelsky(ndata, npar + 1))
 
   printcalib: block
-    real(fp) :: sky(4), hobs
+    real(dp) :: sky(4), hobs
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)

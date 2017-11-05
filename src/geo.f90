@@ -29,7 +29,7 @@ module geo
 
 contains
 
-  elemental pure real(fp) function gtdet(gt) result(det)
+  elemental pure real(dp) function gtdet(gt) result(det)
     class(geotransform), intent(in) :: gt
     det = (gt % xi) * (gt % yj) - (gt % xj) * (gt % yi)
   end function
@@ -47,7 +47,7 @@ contains
 
   function gtexport(gt) result(g)
     class(geotransform), intent(in) :: gt
-    real(fp), dimension(6) :: g
+    real(dp), dimension(6) :: g
     g(1) = gt % x0
     g(2) = gt % xi
     g(3) = gt % xj
@@ -69,8 +69,8 @@ contains
 
   !-----------------------------------------------------------------------------
 
-  elemental real(fp) function m2d(m) result(d)
-    real(fp), intent(in) :: m
+  elemental real(dp) function m2d(m) result(d)
+    real(dp), intent(in) :: m
     d = (m / radearth) * (180 / pi)
   end function
 
@@ -78,17 +78,17 @@ contains
 
   elemental subroutine arr2geo(gt, i, j, lat, lng)
     class(geotransform), intent(in) :: gt
-    real(fp), intent(in) :: i, j
-    real(fp), intent(out) :: lat, lng
+    real(dp), intent(in) :: i, j
+    real(dp), intent(out) :: lat, lng
     lng = (gt % x0) + (gt % xi) * (i - 1) + (gt % xj) * (j - 1)
     lat = (gt % y0) + (gt % yi) * (i - 1) + (gt % yj) * (j - 1)
   end subroutine
 
   elemental subroutine geo2arr(gt, lat, lng, i, j)
     class(geotransform), intent(in) :: gt
-    real(fp), intent(in) :: lat, lng
-    real(fp), intent(out) :: i, j
-    real(fp) :: det
+    real(dp), intent(in) :: lat, lng
+    real(dp), intent(out) :: i, j
+    real(dp) :: det
     det = (gt % xi) * (gt % yj) - (gt % xj) * (gt % yi)
     i = (   (gt % yj) * (lng - (gt % x0)) &
     &     - (gt % xj) * (lat - (gt % y0)) ) / det + 1
@@ -99,34 +99,34 @@ contains
   !-----------------------------------------------------------------------------
 
   elemental subroutine geo2xyz(lat, lng, x, y, z)
-    real(fp), intent(in) :: lat, lng
-    real(fp), intent(out) :: x, y, z
+    real(dp), intent(in) :: lat, lng
+    real(dp), intent(out) :: x, y, z
     x = cos(lat / deg_in_rad) * cos(lng / deg_in_rad)
     y = cos(lat / deg_in_rad) * sin(lng / deg_in_rad)
     z = sin(lat / deg_in_rad)
   end subroutine
 
   elemental subroutine xyz2geo(x, y, z, lat, lng)
-    real(fp), intent(in) :: x, y, z
-    real(fp), intent(out) :: lat, lng
+    real(dp), intent(in) :: x, y, z
+    real(dp), intent(out) :: lat, lng
     lat = atan2(z, sqrt(x**2 + y**2)) * deg_in_rad
     lng = atan2(y, x) * deg_in_rad
   end subroutine
 
   !-----------------------------------------------------------------------------
 
-  elemental real(fp) function angdist(lat1, lng1, lat2, lng2) result(rads)
-    real(fp), intent(in) :: lat1, lng1
-    real(fp), intent(in) :: lat2, lng2
+  elemental real(dp) function angdist(lat1, lng1, lat2, lng2) result(rads)
+    real(dp), intent(in) :: lat1, lng1
+    real(dp), intent(in) :: lat2, lng2
     rads = acos(cos(lat1 / deg_in_rad) * cos(lat2 / deg_in_rad) &
           & * cos((lng1 - lng2) / deg_in_rad) &
           & + sin(lat1 / deg_in_rad) * sin(lat2 / deg_in_rad))
   end function
 
   elemental real function raydist(lat1, lng1, h1, lat2, lng2, h2) result(l)
-    real(fp), intent(in) :: lat1, lng1, h1
-    real(fp), intent(in) :: lat2, lng2, h2
-    real(fp), dimension(3) :: x1, x2
+    real(dp), intent(in) :: lat1, lng1, h1
+    real(dp), intent(in) :: lat2, lng2, h2
+    real(dp), dimension(3) :: x1, x2
     call geo2xyz(lat1, lng1, x1(1), x1(2), x1(3))
     call geo2xyz(lat2, lng2, x2(1), x2(2), x2(3))
     l = sqrt(sum((x1 * (1 + h1) - x2 * (1 + h2))**2))
@@ -139,7 +139,7 @@ contains
     type(geotransform), intent(inout) :: gt
     integer, intent(in) :: b
     real(sp), dimension(:,:), allocatable :: buf
-    real(fp) :: x0, y0
+    real(dp) :: x0, y0
     integer :: i,j
 
     allocate(buf(floor(size(map,1) / real(b)), &
@@ -167,12 +167,12 @@ contains
 
   pure subroutine interpolmap(map, gt, lat, lng, mout)
     real, intent(in), dimension(:,:) :: map
-    real(fp), intent(in) :: lat, lng
+    real(dp), intent(in) :: lat, lng
     type(geotransform), intent(in) :: gt
-    real(fp), intent(out) :: mout
+    real(dp), intent(out) :: mout
     integer :: ki, kj
-    real(fp) :: ri,rj
-    real(fp) :: xi,xj
+    real(dp) :: ri,rj
+    real(dp) :: xi,xj
 
     call geo2arr(gt, lat, lng, xi, xj)
 
@@ -199,10 +199,10 @@ contains
     type(geotransform), intent(in) :: gtsrc, gtdest
     integer i,j
     integer ki, kj
-    real(fp) lat, lng, ri, rj, xi, xj
+    real(dp) lat, lng, ri, rj, xi, xj
 
     do concurrent (i = 1:size(mapdest,1), j = 1:size(mapdest,2))
-      call arr2geo(gtdest, real(i,fp), real(j,fp), lat, lng)
+      call arr2geo(gtdest, real(i,dp), real(j,dp), lat, lng)
       call geo2arr(gtsrc, lat, lng, xi, xj)
 
       ki = max(1, min(floor(xi), size(mapsrc,1) - 1))
@@ -225,21 +225,21 @@ contains
 
   subroutine estimate_data_limits(lat1, lng1, lat2, lng2, dmax, llat, llng, ulat, ulng)
 
-    real(fp), intent(in) :: lat1, lng1
-    real(fp), intent(in) :: lat2, lng2
-    real(fp), intent(in) :: dmax
-    real(fp), intent(out) :: llat, llng, ulat, ulng
+    real(dp), intent(in) :: lat1, lng1
+    real(dp), intent(in) :: lat2, lng2
+    real(dp), intent(in) :: dmax
+    real(dp), intent(out) :: llat, llng, ulat, ulng
     integer, parameter :: p = 5
-    real(fp), dimension(:,:), allocatable :: latm, lngm
+    real(dp), dimension(:,:), allocatable :: latm, lngm
     logical,  dimension(:,:), allocatable :: mask
-    real(fp), dimension(4,2) :: llims, ulims
+    real(dp), dimension(4,2) :: llims, ulims
     integer i,j
 
     allocate( latm(p*180,p*360), lngm(p*180,p*360), mask(p*180,p*360) )
 
     forall (i = 1:size(latm,1), j = 1:size(latm,2))
-      latm(i,j) = real(i - 1, fp) / p - 90
-      lngm(i,j) = (lng1 + lng2) / 2 + real(j - 1, fp) / p - 180
+      latm(i,j) = real(i - 1, dp) / p - 90
+      lngm(i,j) = (lng1 + lng2) / 2 + real(j - 1, dp) / p - 180
     end forall
 
     !$omp parallel sections private(mask)
@@ -310,13 +310,13 @@ contains
   subroutine map_limits(nx, ny, gt, llat, llng, ulat, ulng)
     integer, intent(in) :: nx, ny
     type(geotransform) :: gt
-    real(fp), intent(out) :: llat, llng, ulat, ulng
-    real(fp), dimension(4) :: lats, lngs
+    real(dp), intent(out) :: llat, llng, ulat, ulng
+    real(dp), dimension(4) :: lats, lngs
 
-    call arr2geo(gt, real( 1,fp), real( 1,fp), lats(1), lngs(1))
-    call arr2geo(gt, real(nx,fp), real( 1,fp), lats(2), lngs(2))
-    call arr2geo(gt, real(nx,fp), real(ny,fp), lats(3), lngs(3))
-    call arr2geo(gt, real( 1,fp), real(ny,fp), lats(4), lngs(4))
+    call arr2geo(gt, real( 1,dp), real( 1,dp), lats(1), lngs(1))
+    call arr2geo(gt, real(nx,dp), real( 1,dp), lats(2), lngs(2))
+    call arr2geo(gt, real(nx,dp), real(ny,dp), lats(3), lngs(3))
+    call arr2geo(gt, real( 1,dp), real(ny,dp), lats(4), lngs(4))
 
     llat = minval(lats)
     ulat = maxval(lats)
@@ -328,8 +328,8 @@ contains
   !-----------------------------------------------------------------------------
 
   subroutine map_gen_size(llat, llng, ulat, ulng, grid, nx, ny, gt)
-    real(fp), intent(in) :: llat, llng, ulat, ulng
-    real(fp), intent(in) :: grid
+    real(dp), intent(in) :: llat, llng, ulat, ulng
+    real(dp), intent(in) :: grid
     integer, intent(out) :: nx, ny
     type(geotransform), intent(out) :: gt
 

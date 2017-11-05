@@ -9,11 +9,11 @@ program sbcalib
   implicit none
 
   type dataentry
-    real(fp) :: lat, lng
-    real(fp) :: sky
+    real(dp) :: lat, lng
+    real(dp) :: sky
   end type
 
-  real(fp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
+  real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(source), dimension(:,:), allocatable :: src
 
   type(dataentry), dimension(1024), target :: dat_all
@@ -24,13 +24,13 @@ program sbcalib
 
   integer, parameter :: npar = 5
   integer, parameter :: nprobes = npar + 1
-  real(fp), dimension(npar), parameter :: parlo &
+  real(dp), dimension(npar), parameter :: parlo &
   &   = [ 3e-6,  0.0, 4e3, 0.0, 3.0e-7]
-  real(fp), dimension(npar), parameter :: parhi &
+  real(dp), dimension(npar), parameter :: parhi &
   &   = [ 9e-6, 24.0, 9e3, 0.4, 4.0e-7]
-  real(fp), dimension(npar, nprobes) :: par
-  real(fp), dimension(nprobes) :: modelerr
-  real(fp), dimension(:,:), allocatable :: modelsky
+  real(dp), dimension(npar, nprobes) :: par
+  real(dp), dimension(nprobes) :: modelerr
+  real(dp), dimension(:,:), allocatable :: modelsky
 
   real(sp), dimension(:,:), allocatable :: mapi, maph
   type(geotransform) :: gti, gth
@@ -93,7 +93,7 @@ program sbcalib
 
   printcalib: block
     type(modelpar) :: mpar
-    real(fp) :: sky(4), hobs, a(npar,nprobes)
+    real(dp) :: sky(4), hobs, a(npar,nprobes)
     integer :: ibest, iworst, k
 
     allocate( src(size(mapi,1), size(mapi,2)) )
