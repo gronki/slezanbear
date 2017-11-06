@@ -66,7 +66,7 @@ contains
 
     trace_ray: block
 
-      real(dp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr, Q
+      real(dp), dimension(nn) :: t, lat_ray, lng_ray, h_ray, hterr
       real(dp), dimension(3) :: x1, x2, xi, xw, xr
       integer :: i, j
 
@@ -75,8 +75,9 @@ contains
       call geo2xyz(src % lat, src % lng, x1(1), x1(2), x1(3))
       call geo2xyz(      lat,       lng, x2(1), x2(2), x2(3))
 
-      call cross(x1, x2, xi)
-      call cross(xi / sqrt(sum(xi**2)), x1, xw)
+      xi = cross(x1, x2)
+      xi = xi / sqrt(sum(xi**2))
+      xw = cross(xi, x1)
 
       interpolate_terrain: do i = 1, nn
         xi(:) = x1 * cos(t(i) * adist) + xw * sin(t(i) * adist)
@@ -97,9 +98,7 @@ contains
           h_ray(i) = sqrt(sum(xr**2)) - radearth
         end do calc_hray
 
-        Q(:) = (h_ray - hterr) / (adist * radearth * t)
-
-        attn(j) = minval(Q) / 0.01 + 1
+        attn(j) = minval(h_ray - hterr) / chkray_toler_meters + 1
         if (attn(j) < 0) attn(j) = 0
         if (attn(j) > 1) attn(j) = 1
 
@@ -108,13 +107,13 @@ contains
 
   contains
 
-    pure subroutine cross(x,y,z)
+    pure function cross(x,y) result(z)
       real(dp), dimension(3), intent(in) :: x,y
-      real(dp), dimension(3), intent(out) :: z
+      real(dp), dimension(3) :: z
       z(1) =   x(2)*y(3) - x(3)*y(2)
       z(2) = - x(1)*y(3) + x(3)*y(1)
       z(3) =   x(1)*y(2) - x(2)*y(1)
-    end subroutine
+    end function
 
     elemental real(dp) function f(t, k)
       real(dp), intent(in) :: t, k
