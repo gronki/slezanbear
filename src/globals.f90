@@ -38,5 +38,6 @@ module globals
   real(dp)           :: chkray_sect_meters  = 100
   real(dp)           :: chkray_min_dist     = 1500
   integer, parameter :: chkray_sect_num     = 2048
+  real(dp)           :: chkray_toler_meters = 2
 
 end module
