@@ -107,7 +107,7 @@ program sbcalib
 
     open(34, file = 'calib.log.txt', action = 'write')
 
-    simplex: do k = 1,16
+    simplex: do k = 1,12
 
       iterate_modelpoints: do j = 1, nprobes
         mpar % alpha  = par(1,j)
@@ -133,24 +133,24 @@ program sbcalib
       iworst = maxloc(modelerr,1)
       ibest = minloc(modelerr,1)
 
-      write (34, '(F12.3, F12.2, F12.1, F12.4, F12.3, F12.4)') &
+      write (34, '(F10.3, F10.2, F10.1, F10.4, F10.3, F10.4)') &
       &       par(1,ibest) * 1e6, par(2,ibest), par(3,ibest), par(4,ibest), &
       &       par(5,ibest) * 1e7, modelerr(ibest)
 
       call random_number(a)
       do concurrent (i = 1:npar, j = 1:nprobes, j /= ibest)
-        par(i,j) = par(i,ibest) * (1 + (2 * a(i,j) - 1) / sqrt(4.0*k))
+        par(i,j) = par(i,ibest) * (1 + (2 * a(i,j) - 1) / (2*k))
       end do
 
     end do simplex
 
     close(34)
 
-    print '(*(F12.3))', par(1,:) * 1e6
-    print '(*(F12.2))', par(2,:)
-    print '(*(F12.1))', par(3,:)
-    print '(*(F12.4))', par(4,:)
-    print '(*(F12.3))', par(5,:) * 1e7
+    print '(*(F10.3))', par(1,:) * 1e6
+    print '(*(F10.2))', par(2,:)
+    print '(*(F10.1))', par(3,:)
+    print '(*(F10.4))', par(4,:)
+    print '(*(F10.3))', par(5,:) * 1e7
 
     ibest = minloc(modelerr,1)
     verify_datpoints: do i = 1, ndata
