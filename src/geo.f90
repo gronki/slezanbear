@@ -167,8 +167,8 @@ contains
 
   pure subroutine interpolmap(map, gt, lat, lng, mout)
     real, intent(in), dimension(:,:) :: map
-    real(dp), intent(in) :: lat, lng
     type(geotransform), intent(in) :: gt
+    real(dp), intent(in) :: lat, lng
     real(dp), intent(out) :: mout
     integer :: ki, kj
     real(dp) :: ri,rj
@@ -242,9 +242,6 @@ contains
       lngm(i,j) = (lng1 + lng2) / 2 + real(j - 1, dp) / p - 180
     end forall
 
-    !$omp parallel sections private(mask)
-
-    !$omp section
     mask(:,:) = angdist(latm, lngm, lat1, lng1) .le. (dmax / radearth)
     call growmask(mask)
     llims(1,1) = minval(latm, mask)
@@ -252,7 +249,6 @@ contains
     llims(1,2) = minval(lngm, mask)
     ulims(1,2) = maxval(lngm, mask)
 
-    !$omp section
     mask(:,:) = angdist(latm, lngm, lat1, lng2) .le. (dmax / radearth)
     call growmask(mask)
     llims(2,1) = minval(latm, mask)
@@ -260,7 +256,6 @@ contains
     llims(2,2) = minval(lngm, mask)
     ulims(2,2) = maxval(lngm, mask)
 
-    !$omp section
     mask(:,:) = angdist(latm, lngm, lat2, lng2) .le. (dmax / radearth)
     call growmask(mask)
     llims(3,1) = minval(latm, mask)
@@ -268,15 +263,12 @@ contains
     llims(3,2) = minval(lngm, mask)
     ulims(3,2) = maxval(lngm, mask)
 
-    !$omp section
     mask(:,:) = angdist(latm, lngm, lat2, lng1) .le. (dmax / radearth)
     call growmask(mask)
     llims(4,1) = minval(latm, mask)
     ulims(4,1) = maxval(latm, mask)
     llims(4,2) = minval(lngm, mask)
     ulims(4,2) = maxval(lngm, mask)
-
-    !$omp end parallel sections
 
     llat = minval(llims(:,1))
     llng = minval(llims(:,2))
