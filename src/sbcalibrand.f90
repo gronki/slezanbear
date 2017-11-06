@@ -16,7 +16,8 @@ program sbcalibrand
 
   real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(modelpar) :: par
-  type(dataentry), dimension(100) :: dat
+  type(dataentry), dimension(1024), target :: dat_all
+  type(dataentry), dimension(:), pointer :: dat
   integer :: ndata, i, j
 
   character(128), dimension(9) :: fndem
@@ -29,21 +30,24 @@ program sbcalibrand
   character(*), parameter :: fni = 'SVDNB_npp_20150101-20151231_75N060W_vcm-orm-ntl_v10_c201701311200.avg_rade9.tif'
   character(*), parameter :: datafmt = '(F9.4,1X,F9.4,3X,F5.2,1X,F4.2,3X,F5.2)'
 
-  ndata = 0
+  terrain_attenuation = .false.
 
+  ndata = 0
   open(33, file = 'data.txt', action = 'read')
-  do i = 1,size(dat)
-    read(33, *, iostat = errno) dat(i) % lat, dat(i) % lng, &
-      & dat(i) % sky, dat(i) % err
+  do i = 1,size(dat_all)
+    read(33, *, iostat = errno) dat_all(i) % lat, dat_all(i) % lng, &
+      & dat_all(i) % sky, dat_all(i) % err
     if (errno .ne. 0) exit
     ndata = ndata + 1
   end do
   close(33)
 
-  llat = minval(dat(1:ndata) % lat)
-  ulat = maxval(dat(1:ndata) % lat)
-  llng = minval(dat(1:ndata) % lng)
-  ulng = maxval(dat(1:ndata) % lng)
+  dat => dat_all(1:ndata)
+
+  llat = minval(dat % lat)
+  ulat = maxval(dat % lat)
+  llng = minval(dat % lng)
+  ulng = maxval(dat % lng)
 
   fndem(1) = "eudem_dem_5deg_n45e010.tif"
   fndem(2) = "eudem_dem_5deg_n45e015.tif"
@@ -82,7 +86,7 @@ program sbcalibrand
   printcalib: block
     type(source), dimension(:,:), allocatable :: src
     real :: a(5)
-    real(dp) :: err(100), erra, errb
+    real(dp) :: err(ndata), erra, errb
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
@@ -91,7 +95,7 @@ program sbcalibrand
     write (34,'(A8,A7,A8,A6,A7,3A9)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', 'BG', &
     & 'DEV', 'D(21.5)', 'D(18.5)'
 
-    iterate_parameters: do j = 1, 16000
+    iterate_parameters: do j = 1,3125
       call random_number(a)
 
       par % alpha =  M(a(1), 1.0, 10.0) * 1e-6
@@ -110,13 +114,13 @@ program sbcalibrand
       end do iterate_datpoints
       !$omp end parallel do
 
-      err(1:ndata) = dat(1:ndata) % model - dat(1:ndata) % sky
-      call regr(dat(1:ndata) % sky, err(1:ndata), erra, errb)
+      err = dat % model - dat % sky
+      call regr(dat % sky, err, erra, errb)
 
       write (34,'(F8.3,F7.3,F8.1,F6.3,F7.3,3F9.4)') &
         & par % alpha * 1e6, par % relabs, &
         & par % hscale, par % beta, (par % skybg) * 1e7, &
-        & sqrt(sum(err(1:ndata)**2) / ndata), &
+        & sqrt(sum(err**2) / ndata), &
         & errb + erra * 21.5, errb + erra * 18.5
       flush(34)
     end do iterate_parameters
