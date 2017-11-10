@@ -25,9 +25,9 @@ program sbcalib
   integer, parameter :: npar = 5
   integer, parameter :: nprobes = npar + 1
   real(dp), dimension(npar), parameter :: parlo &
-  &   = [ 3e-6,  0.0, 4e3, 0.0, 3.0e-7]
+  &   = [ 3e-6,  0.0, 2e3, 0.0, 3.0e-7]
   real(dp), dimension(npar), parameter :: parhi &
-  &   = [ 9e-6, 24.0, 9e3, 0.4, 4.0e-7]
+  &   = [ 9e-6, 12.0, 9e3, 0.4, 4.0e-7]
   real(dp), dimension(npar, nprobes) :: par
   real(dp), dimension(nprobes) :: modelerr
   real(dp), dimension(:,:), allocatable :: modelsky
@@ -39,8 +39,9 @@ program sbcalib
   character(*), parameter :: fni = 'SVDNB_npp_20150101-20151231_75N060W_vcm-orm-ntl_v10_c201701311200.avg_rade9.tif'
   character(*), parameter :: datafmt = '(F9.4,1X,F9.4,3X,F5.2,1X,F4.2,3X,F5.2)'
 
-  ndata = 0
+  terrain_attenuation = .false.
 
+  ndata = 0
   open(33, file = 'data.txt', action = 'read')
   do i = 1,size(dat_all)
     read(33, *, iostat = errno) dat_all(i) % lat, dat_all(i) % lng, dat_all(i) % sky
@@ -91,77 +92,165 @@ program sbcalib
   call random_seed()
   allocate(modelsky(ndata, nprobes))
 
-  printcalib: block
-    type(modelpar) :: mpar
-    real(dp) :: sky(4), hobs, a(npar,nprobes)
-    integer :: ibest, iworst, k
+  allocate( src(size(mapi,1), size(mapi,2)) )
+  call mksources(mapi, gti, maph, gth, src)
 
-    allocate( src(size(mapi,1), size(mapi,2)) )
-    call mksources(mapi, gti, maph, gth, src)
+  call random_number(par)
 
-    call random_number(par)
+  do i = 1, npar
+    par(i,:) = parlo(i) + par(i,:) * (parhi(i) - parlo(i))
+  end do
 
-    do i = 1, npar
-      par(i,:) = parlo(i) + par(i,:) * (parhi(i) - parlo(i))
-    end do
+  call simplex(par, parlo, parhi, modelerr, getdeviation)
 
-    open(34, file = 'calib.log.txt', action = 'write')
+  write (0,*) '--------------------'
+  do i = 1, nprobes
+    write (*, '(F8.3,F7.3,F8.1,F6.3,F7.3,Es11.3)') par(1,i) * 1e6, &
+    & par(2,i), par(3,i), par(4,i), par(5,i) * 1e7, modelerr(i)
+  end do
 
-    simplex: do k = 1,12
-
-      iterate_modelpoints: do j = 1, nprobes
-        mpar % alpha  = par(1,j)
-        mpar % relabs = par(2,j)
-        mpar % hscale = par(3,j)
-        mpar % beta   = par(4,j)
-        mpar % skybg  = par(5,j)
-
-        !$omp parallel do private(i, sky, hobs)
-        iterate_datpoints: do i = 1, ndata
-          call onepoint(mpar, dat(i) % lat, dat(i) % lng, &
-          &       src, maph, gth, sky, hobs)
-          modelsky(i,j) = ity2mag(sky(4))
-        end do iterate_datpoints
-        !$omp end parallel do
-
-        modelerr(j) = sqrt(sum((modelsky(:,j) - dat % sky)**2) / ndata)
-      end do iterate_modelpoints
-
-      print '(*(F12.4))', modelerr
-      ! if (any(modelerr < 0.22)) exit simplex
-
-      iworst = maxloc(modelerr,1)
-      ibest = minloc(modelerr,1)
-
-      write (34, '(F10.3, F10.2, F10.1, F10.4, F10.3, F10.4)') &
-      &       par(1,ibest) * 1e6, par(2,ibest), par(3,ibest), par(4,ibest), &
-      &       par(5,ibest) * 1e7, modelerr(ibest)
-
-      call random_number(a)
-      do concurrent (i = 1:npar, j = 1:nprobes, j /= ibest)
-        par(i,j) = par(i,ibest) * (1 + (2 * a(i,j) - 1) / (2*k))
-      end do
-
-    end do simplex
-
-    close(34)
-
-    print '(*(F10.3))', par(1,:) * 1e6
-    print '(*(F10.2))', par(2,:)
-    print '(*(F10.1))', par(3,:)
-    print '(*(F10.4))', par(4,:)
-    print '(*(F10.3))', par(5,:) * 1e7
-
-    ibest = minloc(modelerr,1)
-    verify_datpoints: do i = 1, ndata
-      write (*,'(2F10.4,3F10.3)') &
-      &       dat(i) % lat, dat(i) % lng, dat(i) % sky, modelsky(i,ibest), &
-      &       modelsky(i,ibest) - dat(i) % sky
-    end do verify_datpoints
-
-    deallocate(src)
-  end block printcalib
+  deallocate(src)
 
   deallocate(mapi, maph)
+
+contains
+
+  pure real(dp) function getdeviation(par) result(dev)
+    real(dp), dimension(:), intent(in) :: par
+    type(modelpar) :: mpar
+    real(dp), dimension(ndata) :: modelsky
+    real(dp) :: sky(5), hobs
+    integer :: i
+
+    mpar % alpha  = par(1)
+    mpar % relabs = par(2)
+    mpar % hscale = par(3)
+    mpar % beta   = par(4)
+    mpar % skybg  = par(5)
+
+    iterate_datpoints: do i = 1, ndata
+      call onepoint(mpar, dat(i) % lat, dat(i) % lng, &
+      &       src, maph, gth, sky, hobs)
+      modelsky(i) = sky(4)
+    end do iterate_datpoints
+
+    ! dev = sqrt(sum((ity2mag(modelsky) - dat % sky)**2) / ndata)
+    dev = sum((modelsky - mag2ity(dat % sky))**2 / modelsky)
+  end function
+
+  subroutine simplex(x,xlo,xhi,y,f)
+    interface
+      pure real(dp) function simplexfun(x)
+        import sp,dp
+        real(dp), dimension(:), intent(in) :: x
+      end function
+    end interface
+    real(dp), dimension(:,:), intent(inout) :: x
+    real(dp), dimension(:), intent(in) :: xlo, xhi
+    real(dp), dimension(:), intent(out) :: y
+    procedure(simplexfun) :: f
+
+    real(dp), dimension(*), parameter :: a = [ 1.0, 2.0, 0.5, 0.5 ]
+    integer,  dimension(size(x,1) + 1) :: s
+    real(dp), dimension(size(x,1)) :: x_0, x_r, x_e, x_c
+    real(dp) :: y_r
+    integer :: iter, i, n
+
+    character(*), parameter :: actionfmt = '("simplex ", I2, ": ", &
+          & A12, "(", I2, ")")'
+    character(*), parameter :: statfmt = &
+          & '(8X, "miny = ", Es10.3, " (", I2, ")", &
+          &   3X, "maxy = ", Es10.3, " (", I2, ")")'
+
+    n = size(x,1)
+
+    if (size(x,2) /= n + 1) error stop "simplex: x must have shape (n,n+1)"
+    if (size(y)   /= n + 1) error stop "simplex: size(y) /= size(x,1) + 1"
+    if (size(xlo) /= n) error stop "simplex: size(xlo) /= size(x,1)"
+    if (size(xhi) /= n) error stop "simplex: size(xhi) /= size(x,1)"
+
+    !$omp parallel do
+    do i = 1,n+1
+      y(i) = f(x(:,i))
+    end do
+    !$omp end parallel do
+
+    simplex_loop: do iter = 1, 72
+
+      call isort(y,s)
+      x_0 = sum(x(:,s(1:n)),2) / n
+
+      write (0, statfmt) y(s(1)), s(1), y(s(n+1)), s(n+1)
+
+      ! reflection
+      x_r = x_0 + a(1) * (x_0 - x(:,s(n+1)))
+      y_r = f(x_r)
+      if (y_r < y(s(n))) then
+        if (y_r > y(s(1))) then
+          write (0,actionfmt) iter, "REFLECT", s(n+1)
+          x(:,s(n+1)) = x_r
+        else
+          ! expansion
+          x_e = x_0 + a(2) * (x_r - x_0)
+          if (f(x_e) < y_r) then
+            write (0,actionfmt) iter, "EXPAND", s(n+1)
+            x(:,s(n+1)) = x_e
+          else
+            write (0,actionfmt) iter, "REFLECT", s(n+1)
+            x(:,s(n+1)) = x_r
+          end if
+        end if
+        y(s(n+1)) = f(x(:,s(n+1)))
+      else
+        ! contraction
+        x_c = x_0 + a(3) * (x(:,s(n+1)) - x_0)
+        if (f(x_c) < y(s(n+1))) then
+          write (0,actionfmt) iter, "CONTRACT", s(n+1)
+          x(:,s(n+1)) = x_c
+          y(s(n+1)) = f(x(:,s(n+1)))
+        else
+          ! shrink
+          write (0,actionfmt) iter, "SHRINK", s(1)
+          !$omp parallel do
+          do i = 2,n+1
+            x(:,s(i)) = x(:,s(1)) + a(4) * (x(:,s(i)) - x(:,s(1)))
+            y(s(i)) = f(x(:,s(i)))
+          end do
+          !$omp end parallel do
+          ! do concurrent (i = 2:n+1)
+          !   x(:,s(i)) = x(:,s(1)) + a(4) * (x(:,s(i)) - x(:,s(1)))
+          !   y(s(i)) = f(x(:,s(i)))
+          ! end do
+        end if
+      end if
+    end do simplex_loop
+
+    call isort(y,s)
+    write (0, statfmt) y(s(1)), s(1), y(s(n+1)), s(n+1)
+
+    x = x(:,s)
+    y = y(s)
+
+  end subroutine
+
+  pure subroutine isort(x,s)
+    real(dp), intent(in)  :: x(:)
+    integer,  intent(out) :: s(:)
+    integer :: i,j,sref
+
+    if (size(x) /= size(s)) error stop "isort: size(x) /= size(s)"
+
+    forall (i = 1:size(x)) s(i) = i
+
+    do i = 2, size(x)
+      sref = s(i)
+      j = i - 1
+      do while ( j > 0 .and. x(s(j)) > x(sref) )
+        s(j + 1) = s(j)
+        j = j - 1
+      end do
+      s(j + 1) = sref
+    end do
+  end subroutine
 
 end program sbcalib
