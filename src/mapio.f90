@@ -30,10 +30,8 @@ contains
     write (0, '("opened ",A)') trim(fn)
 
     errno = GDALGetGeotransform(gd, g)
-    print '("GDALGetGeotransform, errno = ",I0)', errno
 
     call gtinit(gt,g)
-
     write (0, '("geotransform = ",3F12.5)') g
 
     nx = GDALGetRasterXSize(gd)
@@ -91,7 +89,6 @@ contains
 
     band = GDALGetRasterBand(gd,1)
     errno = GDALRasterIO_f(band, GF_READ, offx, offy, map)
-    print '("GDALRasterIO_f, errno = ",I0)', errno
     if (errno .ne. 0) error stop "error reading GeoTIFF"
 
     call GDALClose(gd)

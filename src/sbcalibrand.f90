@@ -59,7 +59,7 @@ program sbcalibrand
   fndem(8) = "eudem_dem_5deg_n55e015.tif"
   fndem(9) = "eudem_dem_5deg_n55e020.tif"
 
-  print '("dmax = ",F0.2," km")', dmax / 1e3
+  write (0,'("dmax = ",F0.2," km")') dmax / 1e3
   call estimate_data_limits(llat, llng, ulat, ulng, dmax * 1.05, &
   &       llatsrc, llngsrc, ulatsrc, ulngsrc)
   print '("data limits = ",F6.2,1X,F7.2)', llatsrc, llngsrc, ulatsrc, ulngsrc
@@ -76,7 +76,7 @@ program sbcalibrand
     &              nox, noy, gth)
 
     allocate( maph(nox,noy) )
-    write (*,'("dem raster size = ",2I6)') size(maph,1), size(maph,2)
+    write (0,'("dem raster size = ",2I6)') size(maph,1), size(maph,2)
 
     call map_read_tiles(fndem, maph, gth)
   end block read_dem
