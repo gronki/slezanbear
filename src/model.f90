@@ -172,7 +172,7 @@ contains
     tau = (par % alpha) * (par % relabs) * (par % hscale) &
     &                        * exp(-hobs / (par % hscale))
     ! background glow diminished by the absorption
-    sky(:) = (par % skybg) * exp(-tau)
+    sky(:) = (par % skybg) ! * exp(-tau)
 
     par1 = par
 
