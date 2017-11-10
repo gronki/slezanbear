@@ -130,7 +130,7 @@ program sbcalibrand
 
 contains
 
-  elemental real function m(a, l, u) result(b)
+  elemental real(dp) function m(a, l, u) result(b)
     real, intent(in) :: a
     real, intent(in) :: l, u
     b = l + a * (u - l)
