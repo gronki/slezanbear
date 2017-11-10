@@ -39,14 +39,32 @@ program sbverify
 
   character(*), parameter :: fni = 'SVDNB_npp_20150101-20151231_75N060W_vcm-orm-ntl_v10_c201701311200.avg_rade9.tif'
   character(*), parameter :: datafmt = '(F9.4,1X,F9.4,3X,F5.2,1X,F4.2,3X,F5.2)'
+  character(128) :: buf
 
-  read (*,*) mpar % alpha, mpar % relabs, mpar % hscale, mpar % beta, &
-  &       mpar % skybg
+  call get_command_argument(1, buf)
+  read (buf,*) mpar % alpha
+  mpar % alpha = mpar % alpha * 1e-6
+
+  call get_command_argument(2, buf)
+  read (buf,*) mpar % relabs
+
+  call get_command_argument(3, buf)
+  read (buf,*) mpar % hscale
+
+  call get_command_argument(4, buf)
+  read (buf,*) mpar % beta
+
+  call get_command_argument(5, buf)
+  read (buf,*) mpar % skybg
+  mpar % skybg = mpar % skybg * 1e-7
+
+  write (*,'("parameters: ",F8.3,F7.3,F8.1,F6.3,F7.3)') &
+        & mpar % alpha * 1e6, mpar % relabs, &
+        & mpar % hscale, mpar % beta, (mpar % skybg) * 1e7
 
   terrain_attenuation = .false.
 
   ndata = 0
-
   open(33, file = 'data.txt', action = 'read')
   do i = 1,size(dat_all)
     read(33, *, iostat = errno) dat_all(i) % lat, dat_all(i) % lng, dat_all(i) % sky
@@ -102,6 +120,8 @@ program sbverify
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
+
+    write (*,'(5A10)') 'LAT', 'LNG', 'DATA', 'MODEL', 'ERR'
 
     iterate_datpoints: do i = 1, ndata
       call onepoint(mpar, dat(i) % lat, dat(i) % lng, &
