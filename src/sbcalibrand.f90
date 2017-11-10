@@ -86,42 +86,38 @@ program sbcalibrand
   printcalib: block
     type(source), dimension(:,:), allocatable :: src
     real :: a(5)
-    real(dp) :: err(ndata), erra, errb
+    real(dp) :: err(ndata)
 
     allocate( src(size(mapi,1), size(mapi,2)) )
     call mksources(mapi, gti, maph, gth, src)
 
     open(34, file = 'calib.txt', action = 'write')
-    write (34,'(A8,A7,A8,A6,A7,3A9)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', 'BG', &
-    & 'DEV', 'D(21.5)', 'D(18.5)'
+    write (34,'(A8,A7,A8,A6,A7,A10,A10,A7)') 'SCTR', 'ABS', 'HSCAL', 'SIDE', &
+    & 'BG', 'CHISQ', 'DEVITY', 'DEVMAG'
 
-    iterate_parameters: do j = 1,3125
+    iterate_parameters: do j = 1,16807
       call random_number(a)
 
-      par % alpha =  M(a(1), 1.0, 10.0) * 1e-6
-      par % relabs = M(a(2), 0.00, 24.00)
-      par % hscale = M(a(3), 0.50, 18.0) * 1e3
-      par % beta =   M(a(4), 0.0, 0.8)
-      par % skybg =  M(a(5), 2.8, 4.0) * 1e-7
-
-      par % alpha = (par % alpha) / (par % hscale / 8500)**0.333
+      par % alpha =  M(a(1), 3.0, 24.0) * 1e-6
+      par % relabs = M(a(2), 0.00, 12.00)
+      par % hscale = M(a(3), 2.0, 12.0) * 1e3
+      par % beta =   M(a(4), 0.0, 0.4)
+      par % skybg =  mag2ity(M(a(5), 22.1, 21.6))
 
       !$omp parallel do private(sky,hobs)
       iterate_datpoints: do i = 1, ndata
         call onepoint(par, dat(i) % lat, dat(i) % lng, &
         &       src, maph, gth, sky, hobs)
-        dat(i) % model = ity2mag(sky(4))
+        dat(i) % model = sky(4)
       end do iterate_datpoints
       !$omp end parallel do
 
-      err = dat % model - dat % sky
-      call regr(dat % sky, err, erra, errb)
-
-      write (34,'(F8.3,F7.3,F8.1,F6.3,F7.3,3F9.4)') &
+      write (34,'(F8.3,F7.3,F8.1,F6.3,F7.3,ES10.3,ES10.3,F7.4)') &
         & par % alpha * 1e6, par % relabs, &
         & par % hscale, par % beta, (par % skybg) * 1e7, &
-        & sqrt(sum(err**2) / ndata), &
-        & errb + erra * 21.5, errb + erra * 18.5
+        &      sum((mag2ity(dat % sky) - dat % model)**2  / dat % model), &
+        & sqrt(sum((mag2ity(dat % sky) - dat % model)**2) / ndata), &
+        & sqrt(sum((dat % sky - ity2mag(dat % model))**2) / ndata)
       flush(34)
     end do iterate_parameters
 
