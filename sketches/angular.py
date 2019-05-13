@@ -48,12 +48,14 @@ g1 = lambda costh: 1.5 * costh * where(costh > 0, 1, 0)
 g2 = lambda costh: 6 * costh * (1 - costh) * where(costh > 0, 1, 0)
 g3 = lambda costh: 15 * costh * (1 - costh)**2 * where(costh > 0, 1, 0)
 g4 = lambda costh: 30 * costh * (1 - costh)**3 * where(costh > 0, 1, 0)
+g5 = lambda costh: 52.5 * costh * (1 - costh)**4 * where(costh > 0, 1, 0)
+g6 = lambda costh: 84 * costh * (1 - costh)**5 * where(costh > 0, 1, 0)
 
 alb = 0.15
 g = lambda costh: 0.5 * (glamp(costh) + alb * (lamp_flxdn / refl_flxup) * grefl(costh)) / (lamp_flxup + alb * lamp_flxdn)
 
 a = 0.3
-g = lambda costh: (1 - a) * g1(costh) + a * g4(costh)
+g = lambda costh: (1 - a) * g1(costh) + a * g6(costh)
 
 print "LAMP " + fluxu(glamp)
 print "REFL " + fluxu(grefl)

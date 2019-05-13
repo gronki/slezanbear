@@ -10,7 +10,7 @@ fn0 = '../data/SVDNB_npp_20150101-20151231_75N060W_{}_v10_c201701311200.avg_rade
 # vcm-orm = outlier removed
 # vcm-ntl = background (non-lights) removed
 # vcm-orm-ntl = both
-gd = OpenGdal(fn0.format('vcm'))
+gd = OpenGdal(fn0.format('vcm-orm-ntl'))
 
 print gd.RasterXSize, gd.RasterYSize
 gt = gd.GetGeoTransform()
