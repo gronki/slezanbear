@@ -2,13 +2,14 @@
 FC = gfortran
 ARCH_FLAGS ?= -march=native
 FFLAGS = -O3 -funsafe-math-optimizations $(ARCH_FLAGS) -fopenmp -flto
+FFLAGS = -g -Og
 FFLAGS_EXTRA = -fimplicit-none -ffree-line-length-none \
 				  -pedantic -Wall -Wno-unused-dummy-argument -Warray-temporaries
 
 #---------------------------------------------------------------------------
 
 VPATH = ../src ../src/gdal ../src/test
-OBJECTS = globals.o geo.o kernel.o model.o mapio.o gdal.o
+OBJECTS = globals.o geo.o kernel.o model.o mapio.o gdal.o simplex.o
 PROGRAMS = sbmap sbcalib sbcalibrand sbverify
 TESTS = testw testr
 LDLIBS = -lgdal
