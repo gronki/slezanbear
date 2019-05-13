@@ -1,5 +1,2 @@
-*.o
-*.mod
-*.so
 /bin
 /testbin
