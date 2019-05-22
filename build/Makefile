@@ -2,7 +2,7 @@
 FC = gfortran
 ARCH_FLAGS ?= -march=native
 FFLAGS = -O3 -funsafe-math-optimizations $(ARCH_FLAGS) -fopenmp -flto
-FFLAGS = -g -Og
+# FFLAGS = -g -Og
 FFLAGS += -fimplicit-none -ffree-line-length-none \
 				  -pedantic -Wall -Wno-unused-dummy-argument -Warray-temporaries
 
