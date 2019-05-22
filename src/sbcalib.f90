@@ -6,20 +6,14 @@ program sbcalib
   use slezanbear
   use geo
   use simplex_m
+  use datahandling
 
   implicit none
 
-  type dataentry
-    real(dp) :: lat, lng
-    real(dp) :: sky
-  end type
-
   real(dp) :: llatsrc, llngsrc, ulatsrc, ulngsrc
   type(source), dimension(:,:), allocatable :: src
-
-  type(dataentry), dimension(1024), target :: dat_all
-  type(dataentry), dimension(:), pointer :: dat
-  integer :: ndata, i, j
+  type(dataentry), dimension(:), allocatable :: dat
+  integer :: i, j
 
   character(128), dimension(9) :: fndem
 
@@ -42,16 +36,7 @@ program sbcalib
 
   terrain_attenuation = .false.
 
-  ndata = 0
-  open(33, file = 'data.txt', action = 'read')
-  do i = 1,size(dat_all)
-    read(33, *, iostat = errno) dat_all(i) % lat, dat_all(i) % lng, dat_all(i) % sky
-    if (errno .ne. 0) exit
-    ndata = ndata + 1
-  end do
-  close(33)
-
-  dat => dat_all(1:ndata)
+  call read_data('data.txt', dat)
 
   llat = minval(dat % lat)
   ulat = maxval(dat % lat)
@@ -91,7 +76,7 @@ program sbcalib
   end block read_dem
 
   call random_seed()
-  allocate(modelsky(ndata, nprobes))
+  allocate(modelsky(size(dat), nprobes))
 
   allocate( src(size(mapi,1), size(mapi,2)) )
   call mksources(mapi, gti, maph, gth, src)
@@ -119,7 +104,7 @@ contains
   pure real(dp) function getdeviation(par) result(dev)
     real(dp), dimension(:), intent(in) :: par
     type(modelpar) :: mpar
-    real(dp), dimension(ndata) :: modelsky
+    real(dp), dimension(size(dat)) :: modelsky
     real(dp) :: sky(5), hobs
     integer :: i
 
@@ -129,7 +114,7 @@ contains
     mpar % beta   = par(4)
     mpar % skybg  = par(5)
 
-    iterate_datpoints: do i = 1, ndata
+    iterate_datpoints: do i = 1, size(dat)
       call onepoint(mpar, dat(i) % lat, dat(i) % lng, &
       &       src, maph, gth, sky, hobs)
       modelsky(i) = sky(4)
