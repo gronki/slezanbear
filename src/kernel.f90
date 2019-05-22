@@ -29,15 +29,16 @@ contains
     type(modelpar), intent(in) :: par
     real(dp), intent(in) :: A0, R, D, H, Hobs
     real(dp), intent(out) :: J1, J2, J3
-    real(dp) :: L, Q, costh, cosg, tau1, tau2, chi
+    real(dp) :: L, costh, cosg, tau1, tau2, chi
 
     ! distance from the source to the scattering point
     L = sqrt(H**2 + (1 + H / R) * D**2)
 
     ! emission and scattering angles
-    Q = merge(D**2 / (2 * R * L), 0.0_dp, L .ne. 0)
-    costh = H / L + Q
-    cosg  = H / L - Q * (1 + H / R)
+    associate (Q => merge(D**2 / (2 * R * L), 0.0_dp, L .gt. 0))
+      costh = H / L + Q
+      cosg  = H / L - Q * (1 + H / R)
+    end associate
 
     chi = (par % alpha) * (par % relabs)
 
